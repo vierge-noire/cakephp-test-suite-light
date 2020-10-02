@@ -78,7 +78,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * @param float                   $time current time
      * @return void
      */
-    public function endTest(Test $test, float $time): void
+    public function endTest(Test $test, float $time)
     {
         // noop, see method description
     }
