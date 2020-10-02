@@ -24,11 +24,6 @@
       "CakephpTestSuiteLight\\": "src"
     }
   },
-  "autoload-dev": {
-    "psr-4": {
-      "CakephpTestSuiteLight\\Test\\": "tests"
-    }
-  },
   "config": {
     "sort-packages": true
   }
