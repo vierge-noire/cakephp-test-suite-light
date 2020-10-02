@@ -1,0 +1,38 @@
+{
+  "name": "vierge-noire/cakephp-test-suite-light",
+  "description": "A test suite for CakePHP application based on Sql queries",
+  "type": "cakephp-plugin",
+  "keywords": ["cakephp", "test"],
+  "authors": [
+    {
+      "name": "Nicolas Masson",
+      "email": "nicolas@b-projects.tech"
+    },
+    {
+      "name": "Juan Pablo Ramìrez",
+      "email": "pabloelcolombiano@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "minimum-stability": "dev",
+  "require": {
+    "php": ">=7.2",
+    "cakephp/cakephp": "^4.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "CakephpTestSuiteLight\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "CakephpTestSuiteLight\\Test\\": "tests"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
