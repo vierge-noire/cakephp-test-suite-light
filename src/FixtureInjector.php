@@ -44,7 +44,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * @see Migrator
      * @param TestSuite $suite
      */
-    public function startTestSuite(TestSuite $suite): void
+    public function startTestSuite(TestSuite $suite)
     {}
 
     /**
@@ -55,7 +55,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * @param \PHPUnit\Framework\Test $test The test case
      * @return void
      */
-    public function startTest(Test $test): void
+    public function startTest(Test $test)
     {
         // Truncation can be skipped if no DB interaction are expected
         if (!$this->skipTablesTruncation($test)) {
@@ -63,7 +63,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
         }
 
         // Load CakePHP fixtures if defined
-        if (!empty($test->getFixtures())) {
+        if (!empty($test->fixtures)) {
             parent::startTest($test);
         }
 
@@ -90,7 +90,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      *
      * @param TestSuite $suite
      */
-    public function endTestSuite(TestSuite $suite): void
+    public function endTestSuite(TestSuite $suite)
     {
         // noop, see method description
     }
