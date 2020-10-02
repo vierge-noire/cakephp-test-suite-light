@@ -16,6 +16,9 @@ namespace CakephpTestSuiteLight;
 use Cake\Core\Configure;
 use Migrations\Migrations;
 use PHPUnit\Framework\Test;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\TestListener;
+use PHPUnit\Framework\TestListenerDefaultImplementation;
 use PHPUnit\Framework\TestSuite;
 
 /**
@@ -24,8 +27,10 @@ use PHPUnit\Framework\TestSuite;
  * Class FixtureInjector
  * @package CakephpTestSuiteLight
  */
-class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
+class FixtureInjector implements TestListener
 {
+    use TestListenerDefaultImplementation;
+
     /**
      * @var FixtureManager
      */
@@ -63,8 +68,12 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
         }
 
         // Load CakePHP fixtures if defined
-        if (!empty($test->fixtures)) {
-            parent::startTest($test);
+        if (!empty($test->getFixtures())) {
+            $test->fixtureManager = $this->_fixtureManager;
+            if ($test instanceof TestCase) {
+                $this->_fixtureManager->fixturize($test);
+                $this->_fixtureManager->load($test);
+            }
         }
 
         // Run the seeds of your DB

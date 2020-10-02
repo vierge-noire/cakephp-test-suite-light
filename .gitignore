@@ -1,1 +1,9 @@
+vendor/
+composer.lock
+
 .idea
+
+# Eclipse paths
+.buildpath
+.project
+.settings/

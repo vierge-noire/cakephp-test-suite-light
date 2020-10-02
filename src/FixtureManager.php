@@ -17,7 +17,6 @@ use Cake\Core\Configure;
 use Cake\Core\Exception\Exception;
 use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
-use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\MysqlTableSniffer;
 use CakephpTestSuiteLight\Sniffer\PostgresTableSniffer;
@@ -28,9 +27,16 @@ use function strpos;
  * Class FixtureManager
  * @package CakephpTestSuiteLight
  */
-class FixtureManager extends BaseFixtureManager
+class FixtureManager
 {
     private static $_configIsLoaded = false;
+
+    /**
+     * Was this instance already initialized?
+     *
+     * @var bool
+     */
+    protected $_initialized = false;
 
     /**
      * FixtureManager constructor.
@@ -51,9 +57,54 @@ class FixtureManager extends BaseFixtureManager
         return ConnectionManager::get($name);
     }
 
+    /**
+     * Initializes this class with a DataSource object to use as default for all fixtures
+     *
+     * @return void
+     */
+    protected function _initDb()
+    {
+        if ($this->_initialized) {
+            return;
+        }
+        $this->_aliasConnections();
+        $this->_initialized = true;
+    }
+
     public function initDb()
     {
         $this->_initDb();
+    }
+
+    /**
+     * Add aliases for all non test prefixed connections.
+     *
+     * This allows models to use the test connections without
+     * a pile of configuration work.
+     *
+     * @return void
+     */
+    protected function _aliasConnections()
+    {
+        $connections = ConnectionManager::configured();
+        ConnectionManager::alias('test', 'default');
+        $map = [];
+        foreach ($connections as $connection) {
+            if ($connection === 'test' || $connection === 'default') {
+                continue;
+            }
+            if (isset($map[$connection])) {
+                continue;
+            }
+            if (strpos($connection, 'test_') === 0) {
+                $map[$connection] = substr($connection, 5);
+            } else {
+                $map['test_' . $connection] = $connection;
+            }
+        }
+        foreach ($map as $testConnection => $normal) {
+            ConnectionManager::alias($testConnection, $normal);
+        }
     }
 
     public function aliasConnections()
