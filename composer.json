@@ -20,9 +20,13 @@
     "cakephp/cakephp": "^3.6",
     "phpunit/phpunit": "^6.1"
   },
+  "autoload": {
+    "psr-4": {
+      "CakephpTestSuiteLight\\": "src"
+    }
+  },
   "autoload-dev": {
     "psr-4": {
-      "CakephpTestSuiteLight\\": "src",
       "CakephpTestSuiteLight\\Test\\": "tests",
       "TestApp\\": "tests/TestApp/src"
     }
