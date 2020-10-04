@@ -15,6 +15,7 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 
 use Cake\Database\Connection;
+use Cake\Database\Exception;
 
 class SqliteTableSniffer extends BaseTableSniffer
 {
@@ -24,9 +25,14 @@ class SqliteTableSniffer extends BaseTableSniffer
      */
     public function getDirtyTables(): array
     {
-        return $this->fetchQuery("
+        try {
+            $result = $this->fetchQuery("
              SELECT name FROM sqlite_sequence WHERE name NOT LIKE '%phinxlog';
          ");
+        } catch (Exception $exception) {
+            $result = $this->getAllTables();
+        }
+        return $result;
     }
 
     /**

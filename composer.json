@@ -15,14 +15,22 @@
   ],
   "license": "MIT",
   "minimum-stability": "dev",
-  "require": {
+  "require-dev": {
     "php": ">=7.0",
-    "cakephp/cakephp": "^3.0"
+    "cakephp/cakephp": "^3.0",
+    "phpunit/phpunit": "^6.1"
   },
-  "autoload": {
+  "autoload-dev": {
     "psr-4": {
-      "CakephpTestSuiteLight\\": "src"
+      "CakephpTestSuiteLight\\": "src",
+      "CakephpTestSuiteLight\\Test\\": "tests",
+      "TestApp\\": "tests/TestApp/src"
     }
+  },
+  "scripts": {
+    "run-tests-mysql": "bash run_tests.sh Mysql",
+    "run-tests-pgsql": "bash run_tests.sh Postgres",
+    "run-tests-sqlite": "bash run_tests.sh Sqlite"
   },
   "config": {
     "sort-packages": true

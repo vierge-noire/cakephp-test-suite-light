@@ -66,7 +66,7 @@ class FixtureManager extends BaseFixtureManager
         $connection = $this->getConnection($connectionName);
         $driver = $connection->config()['driver'];
         try {
-            $snifferName = Configure::readOrFail('TestFixtureTableSniffers.' . $driver);
+            $snifferName = Configure::readOrFail('TestSuiteLightSniffers.' . $driver);
         } catch (\RuntimeException $e) {
             throw new \PHPUnit\Framework\Exception("The DB driver $driver is not being supported");
         }
@@ -102,10 +102,10 @@ class FixtureManager extends BaseFixtureManager
     {
         if (!self::$_configIsLoaded) {
             Configure::write([
-                'TestFixtureTableSniffers' => $this->getDefaultTableSniffers()
+                'TestSuiteLightSniffers' => $this->getDefaultTableSniffers()
             ]);
             try {
-                Configure::load('fixture_factories');
+                Configure::load('test_suite_light');
             } catch (Exception $exception) {}
             self::$_configIsLoaded = true;
         }
