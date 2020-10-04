@@ -17,7 +17,7 @@
   "minimum-stability": "dev",
   "require-dev": {
     "php": ">=7.0",
-    "cakephp/cakephp": "^3.0",
+    "cakephp/cakephp": "^3.4",
     "phpunit/phpunit": "^6.1"
   },
   "autoload-dev": {
