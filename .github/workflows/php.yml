@@ -32,7 +32,7 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: test_fixture_factories
+          POSTGRES_DB: test_suite_light
           POSTGRES_PASSWORD: root
           POSTGRES_USER: root
 
