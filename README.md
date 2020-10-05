@@ -65,7 +65,7 @@ by SQL queries. These are called `TableSniffers` and there are located in the `s
 If you use a different database engine, you will have to provide your own. It should extend
 the `BaseTableSniffer`.
 
-You should then map in your `config/fixture_factories.php` file the driver to
+You should then map in your `config/test_suite_light.php` file the driver to
 the custom table sniffer. E.g.:
 
 ```$xslt
@@ -88,12 +88,8 @@ This is made at the test class level, by letting your test class using the trait
 ### Using CakePHP fixtures
 
 It is still possible to use the native CakePHP fixtures. To this aim, you may simply load them as described [here](https://book.cakephp.org/3/en/development/testing.html#creating-fixtures).
-This will have a slight impact on the speed of your tests. You may consider in such cases disabling the truncation
-of tables between each test as described above.
 
-We however discourage using both Fixture Factories and CakePHP Fixtures within one single Test Class.
-It is possible, but may lead to confusion for the developer. 
 
 ***Note: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
-Only one listener is required, which is the one described in the [present documentation](https://github.com/pakacuda/cakephp-fixture-factories/blob/master/docs/setup.md#listeners).
+Only one listener is required, which is the one described in the section *Installation*.
 
