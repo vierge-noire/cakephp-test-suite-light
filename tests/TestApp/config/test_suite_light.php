@@ -5,7 +5,7 @@ return [
         '\testDriver' => '\testTableSniffer'
     ],
     // Do not remove that dummy connection
-    'TestFixtureIgnoredConnections' => [
+    'TestSuiteLightIgnoredConnections' => [
         'test_dummy',
     ],
 ];
