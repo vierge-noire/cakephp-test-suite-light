@@ -13,8 +13,6 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight;
 
-use Cake\Core\Configure;
-use Migrations\Migrations;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestSuite;
 
@@ -106,24 +104,28 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
         return $test->skipTablesTruncation ?? false;
     }
 
-    /**
-     * Rollback the migrations defined in the config, and run them again
-     * This can be useful if certain seed needs to be performed by migration
-     * and should be recreated before each test
-     */
-    public function rollbackAndMigrateIfRequired()
-    {
-        $configs = Configure::read('TestFixtureMarkedNonMigrated', []);
-
-        if (!empty($configs)) {
-            if (!isset($configs[0])) {
-                $configs = [$configs];
-            }
-            $migrations = new Migrations();
-            foreach ($configs as $config) {
-                $migrations->rollback($config);
-                $migrations->migrate($config);
-            }
-        }
-    }
+//      TODO: the package aims at not having migrations
+//      in its dependency. Let's think about a way to have this
+//      done.
+//
+//    /**
+//     * Rollback the migrations defined in the config, and run them again
+//     * This can be useful if certain seed needs to be performed by migration
+//     * and should be recreated before each test
+//     */
+//    public function rollbackAndMigrateIfRequired()
+//    {
+//        $configs = Configure::read('TestFixtureMarkedNonMigrated', []);
+//
+//        if (!empty($configs)) {
+//            if (!isset($configs[0])) {
+//                $configs = [$configs];
+//            }
+//            $migrations = new Migrations();
+//            foreach ($configs as $config) {
+//                $migrations->rollback($config);
+//                $migrations->migrate($config);
+//            }
+//        }
+//    }
 }
