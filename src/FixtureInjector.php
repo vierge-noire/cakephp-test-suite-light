@@ -104,17 +104,17 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
         return $test->skipTablesTruncation ?? false;
     }
 
-//      TODO: the package aims at not having migrations
-//      in its dependency. Let's think about a way to have this
-//      done.
-//
-//    /**
-//     * Rollback the migrations defined in the config, and run them again
-//     * This can be useful if certain seed needs to be performed by migration
-//     * and should be recreated before each test
-//     */
-//    public function rollbackAndMigrateIfRequired()
-//    {
+    /**
+     * Rollback the migrations defined in the config, and run them again
+     * This can be useful if certain seed needs to be performed by migration
+     * and should be recreated before each test
+     *
+     * @todo  TODO: the package aims at avoiding migrations
+     * in its dependency. Let's think about a way to have this
+     * done.
+     */
+    public function rollbackAndMigrateIfRequired()
+    {
 //        $configs = Configure::read('TestFixtureMarkedNonMigrated', []);
 //
 //        if (!empty($configs)) {
@@ -127,5 +127,5 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
 //                $migrations->migrate($config);
 //            }
 //        }
-//    }
+    }
 }
