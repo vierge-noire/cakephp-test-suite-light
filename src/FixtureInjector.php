@@ -38,8 +38,8 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * Nothing to do there. The tables should be created
      * in tests/bootstrap.php, either by migration or by running
      * the relevant Sql commands on the test DBs
-     * See the Migrator tool provided in this package
-     * @see Migrator
+     * See the Migrator tool provided here:
+     * https://github.com/vierge-noire/cakephp-test-migrator
      * @param TestSuite $suite
      */
     public function startTestSuite(TestSuite $suite): void
