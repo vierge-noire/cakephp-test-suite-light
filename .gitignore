@@ -4,3 +4,8 @@ vendor
 dummy_database
 composer.lock
 /.phpunit.result.cache
+
+# Eclipse paths
+.buildpath
+.project
+.settings/
