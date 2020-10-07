@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace CakephpTestSuiteLight\Test\TestCase\TestSuite\Sniffer;
+namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
 use Cake\Database\Exception;
