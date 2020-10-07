@@ -1,7 +1,9 @@
-vendor/
-composer.lock
-
 .idea
+vendor
+**/test_suite_light
+dummy_database
+composer.lock
+/.phpunit.result.cache
 
 # Eclipse paths
 .buildpath

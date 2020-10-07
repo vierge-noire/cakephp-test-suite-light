@@ -87,7 +87,7 @@ class FixtureInjector implements TestListener
      * @param float                   $time current time
      * @return void
      */
-    public function endTest(Test $test, float $time): void
+    public function endTest(Test $test, $time)
     {
         // noop, see method description
     }
