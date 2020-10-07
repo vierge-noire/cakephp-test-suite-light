@@ -72,7 +72,7 @@ the custom table sniffer. E.g.:
 <?php
 
 return [   
-    'TestFixtureTableSniffers' => [
+    'TestSuiteLightSniffers' => [
         '\Some\Database\Driver' => '\Custom\Table\Sniffer', 
     ],
 ];
