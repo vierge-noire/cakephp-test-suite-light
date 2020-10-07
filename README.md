@@ -18,7 +18,7 @@ Make sure you *replace* the native CakePHP listener by the following one inside 
      <listeners>
          <listener class="CakephpTestSuiteLight\FixtureInjector">
              <arguments>
-                 <object class="CakephpFixtureFactories\FixtureManager" />
+                 <object class="CakephpTestSuiteLight\FixtureManager" />
              </arguments>
          </listener>
      </listeners>
