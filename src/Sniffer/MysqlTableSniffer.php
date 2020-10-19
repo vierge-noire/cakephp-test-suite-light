@@ -20,7 +20,6 @@ class MysqlTableSniffer extends BaseTableSniffer
 {
     /**
      * @inheritDoc
-     * @return array
      */
     public function getDirtyTables(): array
     {
@@ -36,15 +35,13 @@ class MysqlTableSniffer extends BaseTableSniffer
 
     /**
      * @inheritDoc
-     * @return bool|void
-     * @throws \Exception
      */
-    public function truncateDirtyTables()
+    public function truncateTables(array $tables)
     {
-        $tables = $this->getDirtyTables();
         if (empty($tables)) {
             return;
         }
+
         $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
             $connection->transactional(function(Connection $connection) use ($tables) {
                 $connection->execute(
@@ -60,7 +57,6 @@ class MysqlTableSniffer extends BaseTableSniffer
 
     /**
      * @inheritDoc
-     * @return array
      */
     public function getAllTables(): array
     {
@@ -73,12 +69,12 @@ class MysqlTableSniffer extends BaseTableSniffer
 
     /**
      * @inheritDoc
-     * @return array|void
-     * @throws \Exception
      */
-    public function dropAllTables()
+    public function dropTables(array $tables)
     {
-        $tables = $this->getAllTables();
+        if (empty($tables)) {
+            return;
+        }
 
         $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
             $connection->transactional(function(Connection $connection) use ($tables) {

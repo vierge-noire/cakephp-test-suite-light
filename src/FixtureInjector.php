@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight;
 
+use Cake\ORM\TableRegistry;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestSuite;
 
@@ -29,9 +30,18 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public $_fixtureManager;
 
-    public function __construct(FixtureManager $manager)
+    /**
+     * @var StatisticTool
+     */
+    public $statisticTool;
+
+    public function __construct(FixtureManager $manager, bool $withStatistics = false)
     {
         $this->_fixtureManager = $manager;
+        $this->_fixtureManager
+            ->collectDirtyTables()
+            ->truncateDirtyTables();
+        $this->statisticTool   = new StatisticTool($manager, $withStatistics);
     }
 
     /**
@@ -57,7 +67,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     {
         // Truncation can be skipped if no DB interaction are expected
         if (!$this->skipTablesTruncation($test)) {
-            $this->_fixtureManager->truncateDirtyTablesForAllTestConnections();
+            $this->_fixtureManager->truncateDirtyTables();
         }
 
         // Load CakePHP fixtures if defined
@@ -70,7 +80,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     }
 
     /**
-     * Do not do anything here, startTest will do the database cleanup before running the next test
+     * Collect the
      *
      * @param \PHPUnit\Framework\Test $test The test case
      * @param float                   $time current time
@@ -78,7 +88,8 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTest(Test $test, float $time): void
     {
-        // noop, see method description
+        $this->_fixtureManager->collectDirtyTables();
+        $this->statisticTool->collectTestStatistics($test, $time);
     }
 
     /**
@@ -90,7 +101,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTestSuite(TestSuite $suite): void
     {
-        // noop, see method description
+        $this->statisticTool->storeTestSuiteStatistics($suite);
     }
 
     /**

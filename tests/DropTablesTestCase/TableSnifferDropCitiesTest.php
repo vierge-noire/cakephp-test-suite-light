@@ -105,7 +105,7 @@ class TableSnifferDropCitiesTest extends TestCase
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();
-        $this->TableSniffer->dropAllTables();
+        $this->TableSniffer->dropTables($this->TableSniffer->getDirtyTables());
 
         $this->expectException(\PDOException::class);
         $this->Cities->find()->first();

@@ -44,7 +44,7 @@ class CakeFixturesTest extends TestCase
     }
 
     /**
-     * For the moment, CakeFixtures are simply ignored
+     * With CakeFixtures only
      */
     public function testGetCountryFromCakeFixtures()
     {

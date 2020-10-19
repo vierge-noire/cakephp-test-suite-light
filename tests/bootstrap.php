@@ -167,4 +167,4 @@ session_id('cli');
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
 //$connection = ConnectionManager::get('test');
-//$connection->('CREATE DATABASE IF NOT EXISTS test_suite_light');
+//$connection->execute('CREATE DATABASE IF NOT EXISTS test_suite_light');

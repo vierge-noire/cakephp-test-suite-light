@@ -89,7 +89,44 @@ This is made at the test class level, by letting your test class using the trait
 
 It is still possible to use the native CakePHP fixtures. To this aim, you may simply load them as described [here](https://book.cakephp.org/3/en/development/testing.html#creating-fixtures).
 
+### Statistic tool
+
+The suite comes with a statistic tool. This will store the execution time, the test name, the number and the list
+of the dirty tables for each test.
+
+In order to activate it, add a second argument set to true to the `FixtureInjector` in the following manner:
+
+```
+<!-- Setup a listener for fixtures -->
+     <listeners>
+         <listener class="CakephpTestSuiteLight\FixtureInjector">
+             <arguments>
+                 <object class="CakephpTestSuiteLight\FixtureManager" />
+                 <boolean>true</boolean>
+             </arguments>
+         </listener>
+     </listeners>
+```
+
+The statistics will be store after each suite in `tmp/test_suite_light/test_suite_statistics.csv`.
+
+With the help of your IDE, you can easily order the results and track the slow tests, and improve their respective performance.
+
+Not the that the statistic tool does not perform any query in the database. It uses information 
+that is being gathered regardless of its actvation. It has no significant impact on the
+overall speed of your tests. 
 
 ***Note: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
 Only one listener is required, which is the one described in the section *Installation*.
 
+## License
+
+The CakePHPFixtureFactories plugin is offered under an [MIT license](https://opensource.org/licenses/mit-license.php).
+
+Copyright 2020 Juan Pablo Ramirez and Nicolas Masson
+
+Licensed under The MIT License Redistributions of files must retain the above copyright notice.
+
+## Authors
+* Juan Pablo Ramirez
+* Nicolas Masson
