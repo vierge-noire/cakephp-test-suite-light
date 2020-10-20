@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight;
 
-use Cake\ORM\TableRegistry;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestSuite;
 
@@ -70,13 +69,11 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
             $this->_fixtureManager->truncateDirtyTables();
         }
 
-        // Load CakePHP fixtures if defined
-        if (!empty($test->fixtures)) {
-            parent::startTest($test);
-        }
+        // Load CakePHP fixtures
+        parent::startTest($test);
 
         // Run the seeds of your DB
-        $this->rollbackAndMigrateIfRequired();
+//        $this->rollbackAndMigrateIfRequired();
     }
 
     /**
@@ -101,7 +98,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTestSuite(TestSuite $suite)
     {
-        $this->statisticTool->storeTestSuiteStatistics($suite);
+        $this->statisticTool->storeTestSuiteStatistics();
     }
 
     /**
@@ -112,7 +109,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function skipTablesTruncation(Test $test): bool
     {
-        return $test->skipTablesTruncation ?? false;
+        return isset($test->skipTablesTruncation) ? $test->skipTablesTruncation : false;
     }
 
     /**
@@ -124,8 +121,8 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * in its dependency. Let's think about a way to have this
      * done.
      */
-    public function rollbackAndMigrateIfRequired()
-    {
+//    public function rollbackAndMigrateIfRequired()
+//    {
 //        $configs = Configure::read('TestFixtureMarkedNonMigrated', []);
 //
 //        if (!empty($configs)) {
@@ -138,5 +135,5 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
 //                $migrations->migrate($config);
 //            }
 //        }
-    }
+//    }
 }

@@ -20,6 +20,7 @@
     "cakephp/cakephp": "^3.6"
   },
   "require-dev": {
+    "phpstan/phpstan": "^0.12.48@dev",
     "phpunit/phpunit": "^6.1"
   },
   "autoload": {
@@ -36,7 +37,8 @@
   "scripts": {
     "run-tests-mysql": "bash run_tests.sh Mysql",
     "run-tests-pgsql": "bash run_tests.sh Postgres",
-    "run-tests-sqlite": "bash run_tests.sh Sqlite"
+    "run-tests-sqlite": "bash run_tests.sh Sqlite",
+    "run-phpstan": "./vendor/bin/phpstan analyse"
   },
   "config": {
     "sort-packages": true
