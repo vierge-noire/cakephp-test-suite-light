@@ -31,6 +31,7 @@
         <listener class="CakephpTestSuiteLight\FixtureInjector">
             <arguments>
                 <object class="CakephpTestSuiteLight\FixtureManager" />
+                <boolean>true</boolean>
             </arguments>
         </listener>
     </listeners>

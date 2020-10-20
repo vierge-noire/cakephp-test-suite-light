@@ -30,16 +30,25 @@ use function strpos;
  */
 class FixtureManager extends BaseFixtureManager
 {
+    /**
+     * @var bool
+     */
     private static $_configIsLoaded = false;
 
     /**
+     * @var array
+     */
+    private $dirtyTables = [];
+
+    /**
      * FixtureManager constructor.
-     * The config file fixture_factories is being loaded
+     * The config file test_suite_light is being loaded
      */
     public function __construct()
     {
-        $this->initDb();
-        $this->loadConfig();
+        $this
+            ->initDb()
+            ->loadConfig();
     }
 
     /**
@@ -51,9 +60,10 @@ class FixtureManager extends BaseFixtureManager
         return ConnectionManager::get($name);
     }
 
-    public function initDb()
+    public function initDb(): FixtureManager
     {
         $this->_initDb();
+        return $this;
     }
 
     public function aliasConnections()
@@ -77,28 +87,39 @@ class FixtureManager extends BaseFixtureManager
     /**
      * Scan all Test connections and truncate the dirty tables
      */
-    public function truncateDirtyTablesForAllTestConnections()
+    public function truncateDirtyTables()
     {
-        $connections = ConnectionManager::configured();
-
-        foreach ($connections as $connectionName) {
-            $ignoredConnections = Configure::read('TestSuiteLightIgnoredConnections', []);
-            if ($connectionName === 'test_debug_kit' || in_array($connectionName, $ignoredConnections)) {
-                // CakePHP 4 solves a DebugKit issue by creating an Sqlite connection
-                // in tests/bootstrap.php. This connection should be ignored.
-            } elseif ($connectionName === 'test' || strpos($connectionName, 'test_') === 0) {
-                $this->getSniffer($connectionName)->truncateDirtyTables();
-            }
+        foreach ($this->getDirtyTables() as $connection => $dirtyTables) {
+            $sniffer = $this->getSniffer($connection);
+            $sniffer->truncateTables($sniffer->getDirtyTables());
         }
+    }
+
+    /**
+     * @param string $connectionName
+     * @param array  $ignoredConnections
+     *
+     * @return bool
+     */
+    public function skipConnection(string $connectionName, array $ignoredConnections): bool
+    {
+        // CakePHP 4 solves a DebugKit issue by creating an Sqlite connection
+        // in tests/bootstrap.php. This connection should be ignored.
+        if ($connectionName === 'test_debug_kit' || in_array($connectionName, $ignoredConnections)) {
+            return true;
+        } elseif ($connectionName === 'test' || strpos($connectionName, 'test_') === 0) {
+            return false;
+        }
+        return true;
     }
 
     /**
      * Load the mapping between the database drivers
      * and the table truncators.
      * Add your own truncators for a driver not being covered by
-     * the package in your fixture-factories.php config file
+     * the package in your test_suite_light.php config file
      */
-    public function loadConfig()
+    public function loadConfig(): FixtureManager
     {
         if (!self::$_configIsLoaded) {
             Configure::write([
@@ -109,6 +130,8 @@ class FixtureManager extends BaseFixtureManager
             } catch (Exception $exception) {}
             self::$_configIsLoaded = true;
         }
+
+        return $this;
     }
 
     /**
@@ -130,6 +153,30 @@ class FixtureManager extends BaseFixtureManager
      */
     public function dropTables(string $connectionName)
     {
-        $this->getSniffer($connectionName)->dropAllTables();
+        $this->getSniffer($connectionName)->dropTables(
+            $this->getSniffer($connectionName)->getAllTables()
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public function getDirtyTables(): array
+    {
+        return $this->dirtyTables;
+    }
+
+    /**
+     *
+     */
+    public function collectDirtyTables(): FixtureManager
+    {
+        $ignoredConnections = Configure::read('TestSuiteLightIgnoredConnections', []);
+        foreach (ConnectionManager::configured() as $connectionName) {
+            if (!$this->skipConnection($connectionName, $ignoredConnections)) {
+                $this->dirtyTables[$connectionName] = $this->getSniffer($connectionName)->getDirtyTables();
+            }
+        }
+        return $this;
     }
 }

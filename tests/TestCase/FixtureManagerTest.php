@@ -19,6 +19,8 @@ use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\MysqlTableSniffer;
+use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
+use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
 use TestApp\Model\Table\CountriesTable;
 
 class FixtureManagerTest extends TestCase
@@ -32,6 +34,14 @@ class FixtureManagerTest extends TestCase
      * @var CountriesTable
      */
     public $Countries;
+
+    public $fixtures = [
+        // The order here is important
+        CountriesFixture::class,
+        CitiesFixture::class,
+    ];
+
+    public $autoFixtures = false;
 
     public function setUp()
     {
@@ -47,9 +57,7 @@ class FixtureManagerTest extends TestCase
 
     public function testTablePopulation()
     {
-        $country = $this->Countries->newEntity(['name' => 'foo']);
-        $this->Countries->saveOrFail($country);
-
+        $this->loadFixtures();
         $this->assertEquals(
             1,
             $this->Countries->find()->count()

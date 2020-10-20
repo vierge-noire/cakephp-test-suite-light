@@ -1,7 +1,7 @@
 # cakephp-test-suite-light
 A fast test suite for CakePHP applications
 
-####For CakePHP 3.x
+#### For CakePHP 3.x
 composer require --dev vierge-noire/cakephp-test-suite-light "^1.0"
 
 #### For CakePHP 4.x
@@ -18,7 +18,7 @@ Make sure you *replace* the native CakePHP listener by the following one inside 
      <listeners>
          <listener class="CakephpTestSuiteLight\FixtureInjector">
              <arguments>
-                 <object class="CakephpFixtureFactories\FixtureManager" />
+                 <object class="CakephpTestSuiteLight\FixtureManager" />
              </arguments>
          </listener>
      </listeners>
@@ -46,3 +46,87 @@ return [
 ```
 
 This can be useful for example if you have connections to a third party server in the cloud that should be ignored.
+
+## Test life cycle
+
+Here is the only step performed by the Fixture Factories Fixture Manager, and how to disable it.
+
+### Truncating tables
+
+The Fixture Manager truncates the dirty tables at the beginning of each test. This is the only action performed.
+
+Dirty tables are tables on which the primary key has been incremented at least one. The detection of dirty tables is made
+by SQL queries. These are called `TableSniffers` and there are located in the `src/TestSuite/Sniffer` folder
+ of the package. These are provided for:
+* Sqlite
+* MySQL
+* Postgres
+
+If you use a different database engine, you will have to provide your own. It should extend
+the `BaseTableSniffer`.
+
+You should then map in your `config/test_suite_light.php` file the driver to
+the custom table sniffer. E.g.:
+
+```$xslt
+<?php
+
+return [   
+    'TestSuiteLightSniffers' => [
+        '\Some\Database\Driver' => '\Custom\Table\Sniffer', 
+    ],
+];
+``` 
+ 
+
+### Disabling the truncation
+
+You may wish to skip the truncation of tables between the tests. For example if you know in advance that
+your tests do not interact with the database, or if you do not mind having a dirty DB at the beginning of your tests.
+This is made at the test class level, by letting your test class using the trait `CakephpTestSuiteLight\SkipTablesTruncation`.
+
+### Using CakePHP fixtures
+
+It is still possible to use the native CakePHP fixtures. To this aim, you may simply load them as described [here](https://book.cakephp.org/3/en/development/testing.html#creating-fixtures).
+
+### Statistic tool
+
+The suite comes with a statistic tool. This will store the execution time, the test name, the number and the list
+of the dirty tables for each test.
+
+In order to activate it, add a second argument set to true to the `FixtureInjector` in the following manner:
+
+```
+<!-- Setup a listener for fixtures -->
+     <listeners>
+         <listener class="CakephpTestSuiteLight\FixtureInjector">
+             <arguments>
+                 <object class="CakephpTestSuiteLight\FixtureManager" />
+                 <boolean>true</boolean>
+             </arguments>
+         </listener>
+     </listeners>
+```
+
+The statistics will be store after each suite in `tmp/test_suite_light/test_suite_statistics.csv`.
+
+With the help of your IDE, you can easily order the results and track the slow tests, and improve their respective performance.
+
+Not the that the statistic tool does not perform any query in the database. It uses information 
+that is being gathered regardless of its actvation. It has no significant impact on the
+overall speed of your tests. 
+
+***Note: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
+Only one listener is required, which is the one described in the section *Installation*.
+
+## License
+
+The CakePHPFixtureFactories plugin is offered under an [MIT license](https://opensource.org/licenses/mit-license.php).
+
+Copyright 2020 Juan Pablo Ramirez and Nicolas Masson
+
+Licensed under The MIT License Redistributions of files must retain the above copyright notice.
+
+## Authors
+* Juan Pablo Ramirez
+* Nicolas Masson

@@ -38,7 +38,7 @@ abstract class BaseTableSniffer
      * @param array $tables
      * @return bool
      */
-    abstract public function truncateDirtyTables();
+    abstract public function truncateTables(array $tables);
 
     /**
      * List all tables
@@ -49,9 +49,9 @@ abstract class BaseTableSniffer
     /**
      * Drop tables passed as a parameter
      * @param array $tables
-     * @return array
+     * @return void
      */
-    abstract public function dropAllTables();
+    abstract public function dropTables(array $tables);
 
     /**
      * BaseTableTruncator constructor.

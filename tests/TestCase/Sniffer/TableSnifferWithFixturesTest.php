@@ -33,7 +33,6 @@ class TableSnifferWithFixturesTest extends TestCase
         // The order here is important
         CountriesFixture::class,
         CitiesFixture::class,
-
     ];
 
     /**
@@ -153,7 +152,7 @@ class TableSnifferWithFixturesTest extends TestCase
     {
         $this->createCity();
 
-        $this->TableSniffer->truncateDirtyTables();
+        $this->TableSniffer->truncateTables($this->TableSniffer->getDirtyTables());
 
         $this->assertSame(
             0,
