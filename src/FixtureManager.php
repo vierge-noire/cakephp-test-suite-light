@@ -66,6 +66,9 @@ class FixtureManager extends BaseFixtureManager
         return $this;
     }
 
+    /**
+     * @return void
+     */
     public function aliasConnections()
     {
         $this->_aliasConnections();
@@ -80,12 +83,13 @@ class FixtureManager extends BaseFixtureManager
         } catch (\RuntimeException $e) {
             throw new \PHPUnit\Framework\Exception("The DB driver $driver is not being supported");
         }
-        /** @var BaseTableSniffer $snifferName */
+
         return new $snifferName($connection);
     }
 
     /**
      * Scan all Test connections and truncate the dirty tables
+     * @return void
      */
     public function truncateDirtyTables()
     {
@@ -150,6 +154,7 @@ class FixtureManager extends BaseFixtureManager
     /**
      * Get the appropriate truncator and drop all tables
      * @param string $connectionName
+     * @return void
      */
     public function dropTables(string $connectionName)
     {

@@ -16,7 +16,6 @@ namespace CakephpTestSuiteLight;
 
 use Cake\Datasource\ConnectionManager;
 use PHPUnit\Framework\Test;
-use PHPUnit\Framework\TestSuite;
 
 class StatisticTool
 {
@@ -44,6 +43,12 @@ class StatisticTool
      */
     public $time;
 
+    /**
+     * StatisticTool constructor.
+     *
+     * @param FixtureManager $manager
+     * @param bool          $isActivated
+     */
     public function __construct(
         FixtureManager $manager,
         $isActivated = false
@@ -54,6 +59,9 @@ class StatisticTool
         $this->setFileName();
     }
 
+    /**
+     * @return bool
+     */
     public function isNotActivated(): bool
     {
         return $this->isActivated !== true;
@@ -62,29 +70,40 @@ class StatisticTool
     /**
      * @param Test  $test
      * @param float $time
+     * @return void
      */
-    public function collectTestStatistics(Test $test, float $time)
+    public function collectTestStatistics(Test $test, float $time): void
     {
         if ($this->isNotActivated()) {
             return;
         }
 
-        $dirytTables = $this->castDirtyTables();
+        $dirtyTables = $this->castDirtyTables();
+        $testName = method_exists($test, 'getName') ? $test->getName() : 'Test name undefined';
 
         $this->statistics[] = [
             round($time * 1000) / 1000,             // Time in seconds
             get_class($test),                           // Test Class name
-            $test->getName(),                           // Test method name
-            count($dirytTables),                        // Number of dirty tables
-            implode(', ', $dirytTables),           // Dirty tables
+            $testName,                           // Test method name
+            count($dirtyTables),                        // Number of dirty tables
+            implode(', ', $dirtyTables),           // Dirty tables
         ];
     }
 
-    public function storeTestSuiteStatistics(TestSuite $suite)
+    /**
+     * Write the collected data in a csv data
+     * @return void
+     */
+    public function storeTestSuiteStatistics(): void
     {
         $this->writeStatsInCsv();
     }
 
+    /**
+     * Extract all dirty tables prefixed with their DB
+     * Sort them
+     * @return array
+     */
     private function castDirtyTables(): array
     {
         $tables = [];
@@ -101,13 +120,21 @@ class StatisticTool
         return $tables;
     }
 
-    public function writeStatsInCsv()
+    /**
+     * Write Stats in a CSV file
+     * @return void
+     */
+    public function writeStatsInCsv(): void
     {
         if ($this->isNotActivated()) {
             return;
         }
 
         $statFile = fopen($this->getFileName(), 'w');
+
+        if (!$statFile) {
+            return;
+        }
 
         fputcsv($statFile, [
             'Time (seconds)',

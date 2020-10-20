@@ -16,7 +16,6 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 use Cake\Database\Exception;
 use Cake\Datasource\ConnectionInterface;
-use Cake\Utility\Hash;
 
 abstract class BaseTableSniffer
 {
@@ -36,7 +35,7 @@ abstract class BaseTableSniffer
     /**
      * Truncate all the tables provided
      * @param array $tables
-     * @return bool
+     * @return void
      */
     abstract public function truncateTables(array $tables);
 
@@ -82,13 +81,18 @@ abstract class BaseTableSniffer
      * Execute a query returning a list of table
      * In case where the query fails because the database queried does
      * not exist, an exception is thrown.
+     *
      * @param string $query
+     *
      * @return array
      */
     protected function fetchQuery(string $query): array
     {
         try {
             $tables = $this->getConnection()->execute($query)->fetchAll();
+            if ($tables === false) {
+                throw new \Exception("Failing query: $query");
+            }
         } catch (\Exception $e) {
             $name = $this->getConnection()->configName();
             $db = $this->getConnection()->config()['database'];
@@ -96,7 +100,11 @@ abstract class BaseTableSniffer
             throw new Exception("Error in the connection '$name'. Is the database '$db' created and accessible?");
         }
 
-        return Hash::extract($tables, '{n}.0');
+        foreach ($tables as $i => $val) {
+            $tables[$i] = $val[0];
+        }
+
+        return $tables;
     }
 
     /**
