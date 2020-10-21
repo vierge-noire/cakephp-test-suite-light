@@ -101,7 +101,7 @@ abstract class BaseTableSniffer
         }
 
         foreach ($tables as $i => $val) {
-            $tables[$i] = $val[0];
+            $tables[$i] = $val[0] ?? $val['name'];
         }
 
         return $tables;
