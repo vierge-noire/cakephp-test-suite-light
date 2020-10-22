@@ -24,6 +24,9 @@ class CitiesFixture extends TestFixture
         'country_id' => ['type' => 'integer'],
         'created' => 'datetime',
         'modified' => 'datetime',
+        '_indexes' => [
+            'country_id' => ['type' => 'index', 'columns' => ['country_id'], 'length' => []],
+        ],
         '_constraints' => [
             'primary' => ['type' => 'primary', 'columns' => ['id']],
             'country_id' => [
