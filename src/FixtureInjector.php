@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight;
 
+use Cake\Datasource\ConnectionManager;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestSuite;
 
@@ -27,12 +28,17 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     /**
      * @var FixtureManager
      */
-    public $_fixtureManager;
+    protected $_fixtureManager;
 
     /**
      * @var StatisticTool
      */
-    public $statisticTool;
+    protected $statisticTool;
+
+    /**
+     * @var AnnotationHandler
+     */
+    protected $annotationHandler;
 
     public function __construct(FixtureManager $manager, bool $withStatistics = false)
     {
@@ -41,6 +47,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
             ->collectDirtyTables()
             ->truncateDirtyTables();
         $this->statisticTool   = new StatisticTool($manager, $withStatistics);
+        $this->annotationHandler = new AnnotationHandler();
     }
 
     /**
@@ -69,8 +76,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
             $this->_fixtureManager->truncateDirtyTables();
         }
 
-        // Load CakePHP fixtures
-        parent::startTest($test);
+        $this->insertFixtures($test);
 
         // Run the seeds of your DB
 //        $this->rollbackAndMigrateIfRequired();
@@ -136,4 +142,29 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
 //            }
 //        }
 //    }
+
+    /**
+     * @param Test $test
+     * @throws \Exception
+     */
+    public function insertFixtures(Test $test)
+    {
+        // Load CakePHP fixtures
+        parent::startTest($test);
+
+        $provider = $this->annotationHandler->getFixtureProvider($test);
+
+        // Run the FixtureProvider in a transaction
+        if (strlen($provider) > 0) {
+            ConnectionManager::get('test')->transactional(function($connection) use ($test, $provider) {
+                try {
+                    $test->{$provider}();
+                } catch (\Exception $e) {
+                    $testName = $test->getName();
+                    $msg = "Error in the @DataProvider $testName::$provider: " . $e->getMessage();
+                    throw new \RuntimeException($msg);
+                }
+            } );
+        }
+    }
 }

@@ -36,6 +36,8 @@ class FixtureInjectorTest extends TestCase
     public function testStartTestWithPhpunitTestCase()
     {
         $test = $this->createMock(TestCase::class);
+        $test->method('getName')->willReturn('getName');
+
         $this->FixtureInjector->startTest($test);
         $this->expectNotToPerformAssertions();
     }
@@ -46,6 +48,8 @@ class FixtureInjectorTest extends TestCase
     public function testStartTestWithCakeTestCase()
     {
         $test = $this->createMock(\Cake\TestSuite\TestCase::class);
+        $test->method('getName')->willReturn('getName');
+
         $this->FixtureInjector->startTest($test);
         $this->expectNotToPerformAssertions();
     }

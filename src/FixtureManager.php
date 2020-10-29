@@ -41,6 +41,11 @@ class FixtureManager extends BaseFixtureManager
     private $dirtyTables = [];
 
     /**
+     * @var array
+     */
+    private $sniffers = [];
+
+    /**
      * FixtureManager constructor.
      * The config file test_suite_light is being loaded
      */
@@ -74,7 +79,22 @@ class FixtureManager extends BaseFixtureManager
         $this->_aliasConnections();
     }
 
+    /**
+     * Each connection has it's own sniffer
+     *
+     * @param string $connectionName
+     * @return BaseTableSniffer
+     */
     public function getSniffer(string $connectionName): BaseTableSniffer
+    {
+        return $this->sniffers[$connectionName] ?? $this->addSniffer($connectionName);
+    }
+
+    /**
+     * @param string $connectionName
+     * @return BaseTableSniffer
+     */
+    public function addSniffer(string $connectionName): BaseTableSniffer
     {
         $connection = $this->getConnection($connectionName);
         $driver = $connection->config()['driver'];
@@ -84,7 +104,7 @@ class FixtureManager extends BaseFixtureManager
             throw new \PHPUnit\Framework\Exception("The DB driver $driver is not being supported");
         }
 
-        return new $snifferName($connection);
+        return $this->sniffers[$connectionName] = new $snifferName($connection);
     }
 
     /**
