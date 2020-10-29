@@ -20,15 +20,21 @@ use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
+use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Test\TestUtil;
+use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use TestApp\Model\Entity\City;
 use TestApp\Model\Entity\Country;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
+use TestApp\Test\Fixture\CitiesFixture;
+use TestApp\Test\Fixture\CountriesFixture;
 
 class TableSnifferWithFixturesTest extends TestCase
 {
+    use ArrayComparerTrait;
+
     public $fixtures = [
         // The order here is important
         CountriesFixture::class,
@@ -86,13 +92,14 @@ class TableSnifferWithFixturesTest extends TestCase
             'countries',
             'cities',
         ];
+        if ($this->TableSniffer->implementsTriggers()) {
+            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        }
 
         $country = $this->Countries->newEntity(['name' => 'foo']);
         $this->Countries->saveOrFail($country);
         $found = $this->TableSniffer->getDirtyTables();
-        sort($found);
-        sort($expected);
-        $this->assertSame($expected, $found);
+        $this->assertArraysHaveSameContent($expected, $found);
     }
 
     /**
@@ -100,14 +107,37 @@ class TableSnifferWithFixturesTest extends TestCase
      */
     public function testGetAllTables()
     {
+        $found = $this->TableSniffer->fetchAllTables();
+        $expected = [
+            'cities',
+            'countries',
+            'phinxlog',
+        ];
+
+        if ($this->TableSniffer->implementsTriggers()) {
+            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        } else {
+            $this->TableSniffer->removeDirtyTableCollectorFromArray($found);
+        }
+
+        $this->assertArraysHaveSameContent($expected, $found);
+    }
+
+    public function testGetAllTablesExceptPhinxlogs()
+    {
+        $found = $this->TableSniffer->getAllTablesExceptPhinxlogs();
         $expected = [
             'cities',
             'countries',
         ];
-        $found = $this->TableSniffer->getAllTables();
-        sort($expected);
-        sort($found);
-        $this->assertSame($expected, $found);
+
+        if ($this->TableSniffer->implementsTriggers()) {
+            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        } else {
+            $this->TableSniffer->removeDirtyTableCollectorFromArray($found);
+        }
+
+        $this->assertArraysHaveSameContent($expected, $found);
     }
 
     private function activateForeignKeysOnSqlite() {
@@ -128,6 +158,8 @@ class TableSnifferWithFixturesTest extends TestCase
     private function createCity(): City
     {
         $city = $this->Cities->newEntity([
+            'uuid_primary_key' => TestUtil::makeUuid(),
+            'id_primary_key' => rand(1, 99999999),
             'name' => 'Foo',
             'country_id' => $this->createCountry()->id
         ]);
@@ -152,11 +184,34 @@ class TableSnifferWithFixturesTest extends TestCase
     {
         $this->createCity();
 
-        $this->TableSniffer->truncateTables($this->TableSniffer->getDirtyTables());
+        $this->TableSniffer->truncateDirtyTables($this->TableSniffer->getDirtyTables());
 
         $this->assertSame(
             0,
             $this->Cities->find()->count() + $this->Countries->find()->count()
         );
+    }
+
+    public function testGetAndDropTriggers()
+    {
+        $this->skipIf(!$this->TableSniffer->implementsTriggers());
+
+        $found = $this->TableSniffer->getTriggers();
+        $expected = [
+            'dirty_table_spy_countries',
+            'dirty_table_spy_cities',
+        ];
+        if (!($this->TableSniffer instanceof MysqlTriggerBasedTableSniffer)) {
+            $expected[] = 'dirty_table_spy_' . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        }
+
+        $this->assertArraysHaveSameContent($expected, $found);
+
+        $this->TableSniffer->dropTriggers();
+        $expected = [];
+        $found = $this->TableSniffer->getTriggers();
+        $this->assertArraysHaveSameContent($expected, $found);
+
+        $this->TableSniffer->setup();
     }
 }

@@ -14,14 +14,15 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight;
 
 use Cake\Core\Configure;
-use Cake\Core\Exception\Exception;
 use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
+use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Sniffer\MysqlTableSniffer;
-use CakephpTestSuiteLight\Sniffer\PostgresTableSniffer;
-use CakephpTestSuiteLight\Sniffer\SqliteTableSniffer;
+use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\SqliteTriggerBasedTableSniffer;
+use Exception;
 use function strpos;
 
 /**
@@ -38,11 +39,18 @@ class FixtureManager extends BaseFixtureManager
     /**
      * @var array
      */
-    private $dirtyTables = [];
+    private $sniffers = [];
+
+    /**
+     * @var array|null
+     */
+    private $activeConnections;
 
     /**
      * FixtureManager constructor.
      * The config file test_suite_light is being loaded
+     * This config file is deprecated. Configure the suite
+     * at the connection level.
      */
     public function __construct()
     {
@@ -74,28 +82,66 @@ class FixtureManager extends BaseFixtureManager
         $this->_aliasConnections();
     }
 
+    /**
+     * Each connection has it's own sniffer
+     *
+     * @param string $connectionName
+     * @return BaseTableSniffer
+     */
     public function getSniffer(string $connectionName): BaseTableSniffer
     {
-        $connection = $this->getConnection($connectionName);
-        $driver = $connection->config()['driver'];
-        try {
-            $snifferName = Configure::readOrFail('TestSuiteLightSniffers.' . $driver);
-        } catch (\RuntimeException $e) {
-            throw new \PHPUnit\Framework\Exception("The DB driver $driver is not being supported");
-        }
-
-        return new $snifferName($connection);
+        return $this->sniffers[$connectionName] ?? $this->addSniffer($connectionName);
     }
 
     /**
-     * Scan all Test connections and truncate the dirty tables
+     * @param string $connectionName
+     * @return BaseTableSniffer
+     */
+    public function addSniffer(string $connectionName): BaseTableSniffer
+    {
+        $snifferName = $this->getConnectionSnifferName($connectionName);
+
+        /** @var BaseTableSniffer $sniffer */
+        $sniffer = new $snifferName($this->getConnection($connectionName));
+        return $this->sniffers[$connectionName] = $sniffer;
+    }
+
+    /**
+     * Read in the config the sniffer to use
+     * @param string $connectionName
+     * @return string
+     */
+    public function getConnectionSnifferName(string $connectionName): string
+    {
+        $config = ConnectionManager::getConfig($connectionName);
+        $driver = '';
+
+        if (isset($config['tableSniffer'])) {
+            $snifferName = $config['tableSniffer'];
+        } else {
+            try {
+                $driver = $this->getConnection($connectionName)->config()['driver'];
+                $snifferName = $this->getDefaultTableSniffers()[$driver] ?? null;
+                if (is_null($snifferName)) {
+                    throw new \RuntimeException();
+                }
+            } catch (\RuntimeException $e) {
+                $msg = "Testsuite light error for connection {$connectionName}. ";
+                $msg .= "The DB driver {$driver} is not supported or was not found";
+                throw new \PHPUnit\Framework\Exception($msg);
+            }
+        }
+        return $snifferName;
+    }
+
+    /**
+     * Scan all test connections and truncate the dirty tables
      * @return void
      */
-    public function truncateDirtyTables()
+    public function truncateDirtyTables(): void
     {
-        foreach ($this->getDirtyTables() as $connection => $dirtyTables) {
-            $sniffer = $this->getSniffer($connection);
-            $sniffer->truncateTables($sniffer->getDirtyTables());
+        foreach ($this->getActiveConnections() as $connection) {
+            $this->getSniffer($connection)->truncateDirtyTables();
         }
     }
 
@@ -111,9 +157,16 @@ class FixtureManager extends BaseFixtureManager
         // in tests/bootstrap.php. This connection should be ignored.
         if ($connectionName === 'test_debug_kit' || in_array($connectionName, $ignoredConnections)) {
             return true;
-        } elseif ($connectionName === 'test' || strpos($connectionName, 'test_') === 0) {
+        }
+
+        if ((ConnectionManager::getConfig($connectionName)['skipInTestSuiteLight'] ?? false) === true) {
+            return true;
+        }
+
+        if ($connectionName === 'test' || strpos($connectionName, 'test_') === 0) {
             return false;
         }
+
         return true;
     }
 
@@ -122,16 +175,23 @@ class FixtureManager extends BaseFixtureManager
      * and the table truncators.
      * Add your own truncators for a driver not being covered by
      * the package in your test_suite_light.php config file
+     * @deprecated The configuration file test_suite_light.php is deprecated
      */
     public function loadConfig(): FixtureManager
     {
         if (!self::$_configIsLoaded) {
-            Configure::write([
-                'TestSuiteLightSniffers' => $this->getDefaultTableSniffers()
-            ]);
             try {
-                Configure::load('test_suite_light');
-            } catch (Exception $exception) {}
+                if (Configure::load('test_suite_light')) {
+                    throw new \PHPUnit\Framework\Exception(
+                        "The test_suite_light.php configuration file is deprecated.\n" .
+                        "See https://github.com/vierge-noire/cakephp-test-suite-light#cakephp-test-suite-light.\n"
+                    );
+                }
+            }
+            catch (\PHPUnit\Framework\Exception $exception) {
+                echo $exception->getMessage();
+            }
+            catch (Exception $exception) {}
             self::$_configIsLoaded = true;
         }
 
@@ -139,15 +199,15 @@ class FixtureManager extends BaseFixtureManager
     }
 
     /**
-     * Table truncators provided by the package
+     * Table sniffers provided by the package
      * @return array
      */
-    private function getDefaultTableSniffers()
+    public function getDefaultTableSniffers(): array
     {
         return [
-            \Cake\Database\Driver\Mysql::class => MysqlTableSniffer::class,
-            \Cake\Database\Driver\Sqlite::class => SqliteTableSniffer::class,
-            \Cake\Database\Driver\Postgres::class => PostgresTableSniffer::class,
+            \Cake\Database\Driver\Mysql::class => MysqlTriggerBasedTableSniffer::class,
+            \Cake\Database\Driver\Sqlite::class => SqliteTriggerBasedTableSniffer::class,
+            \Cake\Database\Driver\Postgres::class => PostgresTriggerBasedTableSniffer::class,
         ];
     }
 
@@ -156,32 +216,137 @@ class FixtureManager extends BaseFixtureManager
      * @param string $connectionName
      * @return void
      */
-    public function dropTables(string $connectionName)
+    public function dropTables(string $connectionName): void
     {
         $this->getSniffer($connectionName)->dropTables(
-            $this->getSniffer($connectionName)->getAllTables()
+            $this->getSniffer($connectionName)->fetchAllTables()
         );
     }
 
     /**
+     * Initialize all connections used by the manager
      * @return array
      */
-    public function getDirtyTables(): array
+    public function fetchActiveConnections(): array
     {
-        return $this->dirtyTables;
+        $connections = ConnectionManager::configured();
+        $ignoredConnections = Configure::read('TestSuiteLightIgnoredConnections', []);
+        foreach ($connections as $i => $connectionName) {
+            if ($this->skipConnection($connectionName, $ignoredConnections)) {
+                unset($connections[$i]);
+            }
+        }
+        return $this->activeConnections = $connections;
     }
 
     /**
-     *
+     * If not yet set, fetch the active connections
+     * Those are the connections that are neither ignored,
+     * nor irrelevant (debug_kit, non-test DBs etc...)
+     * @return array
      */
-    public function collectDirtyTables(): FixtureManager
+    public function getActiveConnections(): array
     {
-        $ignoredConnections = Configure::read('TestSuiteLightIgnoredConnections', []);
-        foreach (ConnectionManager::configured() as $connectionName) {
-            if (!$this->skipConnection($connectionName, $ignoredConnections)) {
-                $this->dirtyTables[$connectionName] = $this->getSniffer($connectionName)->getDirtyTables();
-            }
+        return $this->activeConnections ?? $this->fetchActiveConnections();
+    }
+
+    /**
+     * Returns all the fixture objects of a test
+     * grouped by connection
+     * @param string[] $fixtures The array of fixtures a list of connections is needed from.
+     * @return array
+     */
+    public function getFixturesPerConnection(array $fixtures)
+    {
+        if (method_exists($this, 'groupFixturesByConnection')) {
+            // For Cake ^4.2
+            return $this->groupFixturesByConnection($fixtures);
+        } elseif (method_exists($this, '_fixtureConnections')) {
+            // For Cake ^4.0
+            return $this->_fixtureConnections($fixtures);
+        } else {
+            throw new Exception(
+                'Neither groupFixturesByConnection nor _fixtureConnections defined in ' . self::class
+            );
         }
-        return $this;
+    }
+
+    /**
+     * Insert fixture data.
+     *
+     * @param \Cake\TestSuite\TestCase $test The test to inspect for fixture loading.
+     * @return void
+     * @throws \Cake\Core\Exception\Exception When fixture records cannot be inserted.
+     * @throws \RuntimeException
+     */
+    public function load(TestCase $test): void
+    {
+        $fixtures = $test->getFixtures();
+        if (!$fixtures || !$test->autoFixtures) {
+            return;
+        }
+
+        try {
+            foreach ($this->getFixturesPerConnection($fixtures) as $conn => $fixtures) {
+                $connection = ConnectionManager::get($conn);
+                $logQueries = $connection->isQueryLoggingEnabled();
+
+                if ($logQueries && !$this->_debug) {
+                    $connection->disableQueryLogging();
+                }
+                $connection->transactional(function (ConnectionInterface $connection) use ($fixtures, $test): void {
+                    $connection->disableConstraints(function (ConnectionInterface $connection) use ($fixtures, $test): void {
+                        foreach ($fixtures as $fixture) {
+                            try {
+                                $fixture->insert($connection);
+                            } catch (\PDOException $e) {
+                                $msg = sprintf(
+                                    'Unable to insert fixture "%s" in "%s" test case: ' . "\n" . '%s',
+                                    get_class($fixture),
+                                    get_class($test),
+                                    $e->getMessage()
+                                );
+                                throw new Exception($msg, 0, $e);
+                            }
+                        }
+                    });
+                });
+                if ($logQueries) {
+                    $connection->enableQueryLogging(true);
+                }
+            }
+        } catch (\PDOException $e) {
+            $msg = sprintf(
+                'Unable to insert fixtures for "%s" test case. %s',
+                get_class($test),
+                $e->getMessage()
+            );
+            throw new \RuntimeException($msg, 0, $e);
+        }
+    }
+
+    public function loadSingle(string $name, ?ConnectionInterface $db = null, bool $dropTables = true): void
+    {
+        if (!isset($this->_fixtureMap[$name])) {
+            throw new \UnexpectedValueException(sprintf('Referenced fixture class %s not found', $name));
+        }
+
+        $fixture = $this->_fixtureMap[$name];
+        if (!$db) {
+            $db = ConnectionManager::get($fixture->connection());
+        }
+
+        $db->disableConstraints(function (ConnectionInterface $db) use ($fixture): void {
+            try {
+                $fixture->insert($db);
+            } catch (\PDOException $e) {
+                $msg = sprintf(
+                    'Unable to insert fixture "%s": ' . "\n" . '%s',
+                    get_class($fixture),
+                    $e->getMessage()
+                );
+                throw new Exception($msg, 0, $e);
+            }
+        });
     }
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * Licensed under The MIT License
@@ -10,22 +11,25 @@
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace TestApp\Model\Table;
 
-use Cake\ORM\Table;
+use Migrations\AbstractMigration;
 
-class CountriesTable extends Table
+class CreateProductsTable extends AbstractMigration
 {
-    public function initialize(array $config): void
+
+    public function change(): void
     {
-        $this->addBehavior('Timestamp');
+        $table = $this->table('products');
+        $table
+            ->addColumn('name', 'string')
+            ->create();
+    }
 
-        $this->addAssociations([
-            'hasMany' => [
-                'Cities',
-            ],
-        ]);
-
-        parent::initialize($config);
+    public function down(): void
+    {
+        $this
+            ->table('products')
+            ->drop();
     }
 }
+

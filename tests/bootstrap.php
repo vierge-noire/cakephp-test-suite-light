@@ -94,28 +94,42 @@ Cache::setConfig([
     ],
 ]);
 
-// Ensure default test connection is defined
+$loadEnv = function(string $fileName) {
+    if (file_exists($fileName)) {
+        $dotenv = new \josegonzalez\Dotenv\Loader($fileName);
+        $dotenv->parse()
+            ->putenv(true)
+            ->toEnv(true)
+            ->toServer(true);
+    }
+};
+
 if (!getenv('DB_DRIVER')) {
-    putenv('DB_DRIVER=Cake\Database\Driver\Sqlite');
+    putenv('DB_DRIVER=Sqlite');
+}
+$driver =  getenv('DB_DRIVER');
+
+if (!file_exists(ROOT . DS . '.env')) {
+    @copy(".env.$driver", ROOT . DS . '.env');
 }
 
-if (!getenv('DB_USER')) {
-    putenv('DB_USER=root');
-}
+/**
+ * Read .env file(s).
+ */
+$loadEnv(ROOT . DS . '.env');
 
-// Ensure default test connection is defined
-if (!getenv('DB_PWD')) {
-    putenv('DB_PWD=root');
-}
+// Re-read the driver
+$driver =  getenv('DB_DRIVER');
+echo "Using driver $driver \n";
 
 $dbConnection = [
     'className' => 'Cake\Database\Connection',
-    'driver' => getenv('DB_DRIVER'),
+    'driver' => 'Cake\Database\Driver\\' . $driver,
     'persistent' => false,
-    'host' => '127.0.0.1',
+    'host' => getenv('DB_HOST'),
     'username' => getenv('DB_USER'),
     'password' => getenv('DB_PWD'),
-    'database' => 'test_suite_light',
+    'database' => getenv('DB_DATABASE'),
     'encoding' => 'utf8',
     'timezone' => 'UTC',
     'cacheMetadata' => true,
@@ -124,6 +138,10 @@ $dbConnection = [
     //'init' => ['SET GLOBAL innodb_stats_on_metadata = 0'],
     'url' => env('DATABASE_TEST_URL', null),
 ];
+
+if (getenv('TABLE_SNIFFER')) {
+    $dbConnection['tableSniffer'] = getenv('TABLE_SNIFFER');
+}
 
 ConnectionManager::setConfig('default', $dbConnection);
 ConnectionManager::setConfig('test', $dbConnection);
@@ -156,15 +174,15 @@ Log::setConfig([
 Chronos::setTestNow(Chronos::now());
 Security::setSalt('a-long-but-not-random-value');
 
-ini_set('intl.default_locale', 'en_US');
-ini_set('session.gc_divisor', '1');
+//ini_set('intl.default_locale', 'en_US');
+//ini_set('session.gc_divisor', '1');
 
 // Fixate sessionid early on, as php7.2+
 // does not allow the sessionid to be set after stdout
 // has been written to.
-session_id('cli');
+//session_id('cli');
 
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
-//$connection = ConnectionManager::get('test');
-//$connection->execute('CREATE DATABASE IF NOT EXISTS test_suite_light');
+$migrations = new \Migrations\Migrations(['connection' => 'test']);
+$migrations->migrate();

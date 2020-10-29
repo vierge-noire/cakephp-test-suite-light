@@ -12,10 +12,7 @@
  */
 namespace TestApp\Model\Table;
 
-use Cake\Event\Event;
-use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
-use Cake\Validation\Validator;
 
 class CitiesTable extends Table
 {

@@ -20,12 +20,13 @@ use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
+use CakephpTestSuiteLight\Test\TestUtil;
 use TestApp\Model\Entity\City;
 use TestApp\Model\Entity\Country;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
+use TestApp\Test\Fixture\CitiesFixture;
+use TestApp\Test\Fixture\CountriesFixture;
 
 class TableSnifferDropCountriesTest extends TestCase
 {
@@ -66,9 +67,6 @@ class TableSnifferDropCountriesTest extends TestCase
 
     public function tearDown(): void
     {
-        $this->FixtureManager->unload($this);
-        $this->FixtureManager->load($this);
-
         unset($this->TableSniffer);
         unset($this->FixtureManager);
         unset($this->Countries);
@@ -95,6 +93,8 @@ class TableSnifferDropCountriesTest extends TestCase
     private function createCity(): City
     {
         $city = $this->Cities->newEntity([
+            'uuid_primary_key' => TestUtil::makeUuid(),
+            'id_primary_key' => rand(1, 99999999),
             'name' => 'Foo',
             'country_id' => $this->createCountry()->id
         ]);
@@ -104,8 +104,8 @@ class TableSnifferDropCountriesTest extends TestCase
     public function testDropWithForeignKeyCheckCities()
     {
         $this->activateForeignKeysOnSqlite();
-        $this->createCity();
-        $this->TableSniffer->dropTables($this->TableSniffer->getDirtyTables());
+        $this->createCity();    // This will create a country too
+        $this->TableSniffer->dropTables($this->TableSniffer->fetchAllTables());
 
         $this->expectException(\PDOException::class);
         $this->Countries->find()->first();

@@ -37,9 +37,6 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     public function __construct(FixtureManager $manager, bool $withStatistics = false)
     {
         $this->_fixtureManager = $manager;
-        $this->_fixtureManager
-            ->collectDirtyTables()
-            ->truncateDirtyTables();
         $this->statisticTool   = new StatisticTool($manager, $withStatistics);
     }
 
@@ -85,7 +82,6 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTest(Test $test, float $time): void
     {
-        $this->_fixtureManager->collectDirtyTables();
         $this->statisticTool->collectTestStatistics($test, $time);
     }
 

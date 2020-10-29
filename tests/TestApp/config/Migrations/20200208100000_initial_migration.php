@@ -11,14 +11,35 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
+use Cake\Datasource\ConnectionManager;
+use CakephpTestSuiteLight\FixtureManager;
 use Migrations\AbstractMigration;
 
 class InitialMigration extends AbstractMigration
 {
-    public function up()
+    /**
+     * @inheritDoc
+     */
+    public function up(): void
     {
-        $this->table('cities')
-            ->addPrimaryKey(['id'])
+        $manager = new FixtureManager();
+        $supportsUuid = $manager->getSniffer('test')->implementsTriggers();
+
+        // Sqlite is not happy with the composite and/or uuid concept
+        if (!$supportsUuid || ConnectionManager::getConfig('test')['driver'] === 'Cake\Database\Driver\Sqlite') {
+            $citiesTable = $this->table('cities');
+        } else {
+            $citiesTable = $this->table('cities', ['id' => false, 'primary_key' => ['uuid_primary_key', 'id_primary_key']])
+                ->addColumn('uuid_primary_key', 'uuid', [
+                    'default' => \CakephpTestSuiteLight\Test\TestUtil::makeUuid(),
+                ])
+                ->addColumn('id_primary_key', 'integer', [
+                    'default' => rand(1, 999999999),
+                ]);
+        }
+
+        $citiesTable
             ->addColumn('name', 'string', [
                 'limit' => 128,
                 'null' => false,
@@ -45,7 +66,10 @@ class InitialMigration extends AbstractMigration
             ->save();
     }
 
-    public function down()
+    /**
+     * @inheritDoc
+     */
+    public function down(): void
     {
         $this->table('cities')->drop();
         $this->table('countries')->drop();

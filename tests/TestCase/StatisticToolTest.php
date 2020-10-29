@@ -14,11 +14,12 @@ declare(strict_types=1);
 
 namespace TestCase;
 
+use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\StatisticTool;
-use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
+use TestApp\Test\Fixture\CitiesFixture;
+use TestApp\Test\Fixture\CountriesFixture;
 
 class StatisticToolTest extends TestCase
 {
@@ -59,8 +60,8 @@ class StatisticToolTest extends TestCase
         // Arrange
         $this->loadFixtures();
         $time = 0.1239999;
-        $this->StatisticTool->getFixtureManager()->collectDirtyTables();
         $this->StatisticTool->collectTestStatistics($this, $time);
+        $db = ConnectionManager::get('test')->config()['database'];
 
         // Act
         $stats = $this->StatisticTool->getStatistics();
@@ -73,7 +74,7 @@ class StatisticToolTest extends TestCase
         $this->assertSame(self::class, $stats[1]);
         $this->assertSame(__FUNCTION__, $stats[2]);
         $this->assertSame(2, $stats[3]);
-        $this->assertSame('test_suite_light.cities, test_suite_light.countries', $stats[4]);
+        $this->assertSame("$db.cities, $db.countries", $stats[4]);
     }
 
     public function testWriteStatsInCsv()

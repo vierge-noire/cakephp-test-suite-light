@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight;
 
 use Cake\Datasource\ConnectionManager;
+use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use PHPUnit\Framework\Test;
 
 class StatisticTool
@@ -27,6 +28,10 @@ class StatisticTool
      * @var array
      */
     private $statistics = [];
+    /**
+     * @var array
+     */
+    private $dirtyTables = [];
 
     /**
      * @var string
@@ -68,6 +73,25 @@ class StatisticTool
     }
 
     /**
+     * Go through the manager connections and collect dirty tables
+     * @return void
+     */
+    public function collectDirtyTables(): void
+    {
+        foreach ($this->getFixtureManager()->getActiveConnections() as $connectionName) {
+            $this->dirtyTables[$connectionName] = $this->getFixtureManager()->getSniffer($connectionName)->getDirtyTables();
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function getDirtyTables(): array
+    {
+        return $this->dirtyTables;
+    }
+
+    /**
      * @param Test  $test
      * @param float $time
      * @return void
@@ -77,6 +101,8 @@ class StatisticTool
         if ($this->isNotActivated()) {
             return;
         }
+
+        $this->collectDirtyTables();
 
         $dirtyTables = $this->castDirtyTables();
         $testName = method_exists($test, 'getName') ? $test->getName() : 'Test name undefined';
@@ -107,10 +133,14 @@ class StatisticTool
     private function castDirtyTables(): array
     {
         $tables = [];
-        foreach ($this->getFixtureManager()->getDirtyTables() as $connection => $dirtyTables) {
+        foreach ($this->getDirtyTables() as $connection => $dirtyTables) {
             $db = ConnectionManager::get($connection)->config()['database'];
             foreach ($dirtyTables as $i => $dirtyTable) {
-                $dirtyTables[$i] = "$db.$dirtyTable";
+                if ($dirtyTable !== TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR) {
+                    $dirtyTables[$i] = "$db.$dirtyTable";
+                } else {
+                    unset($dirtyTables[$i]);
+                }
             }
             $tables += $dirtyTables;
         }
