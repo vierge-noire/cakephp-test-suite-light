@@ -20,9 +20,6 @@ jobs:
         php-version: ['7.2  ', '7.4']
         db-type: [sqlite, mysql, pgsql]
         composer-type: [lowest, stable, dev]
-        exclude:
-          - php-version: '7.0'
-            db-type: sqlite
 
     name: PHP ${{ matrix.php-version }} & ${{ matrix.db-type }} & ${{ matrix.composer-type }}
 
@@ -54,7 +51,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer remove --dev phpstan/phpstan
           if [[ ${{ matrix.composer-type }} == 'lowest' ]]; then
             composer update --prefer-dist --no-progress --no-suggest --prefer-stable --prefer-lowest
           elif [[ ${{ matrix.composer-type }} == 'stable' ]]; then
