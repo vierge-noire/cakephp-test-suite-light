@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight;
 
 use Cake\Core\Configure;
-use Cake\Core\Exception\Exception;
 use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
@@ -22,6 +21,7 @@ use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\MysqlTableSniffer;
 use CakephpTestSuiteLight\Sniffer\PostgresTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SqliteTableSniffer;
+use Exception;
 use function strpos;
 
 /**
