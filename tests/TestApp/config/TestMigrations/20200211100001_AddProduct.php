@@ -11,10 +11,29 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace CakephpTestSuiteLight;
 
+use Migrations\AbstractMigration;
 
-trait SkipTablesTruncation
+class AddProduct extends AbstractMigration
 {
-    public $skipTablesTruncation = true;
+
+    const PRODUCT_NAME = 'Test Suite Light';
+
+    public function up()
+    {
+        $table = $this->table('products');
+        $table
+            ->insert([
+                'name' => self::PRODUCT_NAME
+            ])
+            ->save();
+    }
+
+    public function down()
+    {
+        $this
+            ->table('products')
+            ->truncate();
+    }
 }
+

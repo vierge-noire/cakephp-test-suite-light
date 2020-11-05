@@ -17,9 +17,12 @@
   "minimum-stability": "dev",
   "require": {
     "php": ">=7.0",
-    "cakephp/cakephp": "^3.6"
+    "cakephp/cakephp": "^3.7",
+    "ext-pdo": "*"
   },
   "require-dev": {
+    "cakephp/migrations": "^2.3",
+    "josegonzalez/dotenv": "dev-master",
     "phpunit/phpunit": "^6.1"
   },
   "autoload": {
@@ -30,7 +33,8 @@
   "autoload-dev": {
     "psr-4": {
       "CakephpTestSuiteLight\\Test\\": "tests",
-      "TestApp\\": "tests/TestApp/src"
+      "TestApp\\": "tests/TestApp/src",
+      "TestApp\\Test\\": "tests/TestApp/tests"
     }
   },
   "scripts": {

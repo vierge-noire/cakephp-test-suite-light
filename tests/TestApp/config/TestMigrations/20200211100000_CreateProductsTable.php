@@ -11,10 +11,25 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace CakephpTestSuiteLight;
 
+use Migrations\AbstractMigration;
 
-trait SkipTablesTruncation
+class CreateProductsTable extends AbstractMigration
 {
-    public $skipTablesTruncation = true;
+
+    public function change()
+    {
+        $table = $this->table('products');
+        $table
+            ->addColumn('name', 'string')
+            ->create();
+    }
+
+    public function down()
+    {
+        $this
+            ->table('products')
+            ->drop();
+    }
 }
+

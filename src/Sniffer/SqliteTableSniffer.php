@@ -17,6 +17,10 @@ namespace CakephpTestSuiteLight\Sniffer;
 use Cake\Database\Connection;
 use Cake\Database\Exception;
 
+/**
+ * Class SqliteTableSniffer
+ * @deprecated Use trigger-based sniffers
+ */
 class SqliteTableSniffer extends BaseTableSniffer
 {
     /**
@@ -37,8 +41,10 @@ class SqliteTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function truncateTables(array $tables)
+    public function truncateDirtyTables()
     {
+        $tables = $this->getDirtyTables();
+
         if (empty($tables)) {
             return;
         }
@@ -63,7 +69,7 @@ class SqliteTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function getAllTables(): array
+    public function fetchAllTables(): array
     {
         return $this->fetchQuery("
              SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence';

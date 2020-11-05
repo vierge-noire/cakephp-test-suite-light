@@ -16,10 +16,8 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use TestApp\Model\Table\CountriesTable;
-use TestApp\Test\Fixture\CitiesFixture;
-use TestApp\Test\Fixture\CountriesFixture;
 
-class CakeFixturesTest extends TestCase
+class CakeFixturesStringNotationTest extends TestCase
 {
     /**
      * @var CountriesTable
@@ -27,8 +25,8 @@ class CakeFixturesTest extends TestCase
     public $Countries;
 
     public $fixtures = [
-        CountriesFixture::class,
-        CitiesFixture::class,
+        'app.Countries',
+        'app.Cities',
     ];
 
     public function setUp()

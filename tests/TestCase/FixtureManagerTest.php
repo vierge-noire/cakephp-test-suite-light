@@ -15,13 +15,19 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 
 use Cake\Core\Configure;
+use Cake\Database\Driver\Mysql;
+use Cake\Database\Driver\Postgres;
+use Cake\Database\Driver\Sqlite;
+use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
-use CakephpTestSuiteLight\Sniffer\MysqlTableSniffer;
-use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
+use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\SqliteTriggerBasedTableSniffer;
 use TestApp\Model\Table\CountriesTable;
+use TestApp\Test\Fixture\CitiesFixture;
+use TestApp\Test\Fixture\CountriesFixture;
 
 class FixtureManagerTest extends TestCase
 {
@@ -91,19 +97,83 @@ class FixtureManagerTest extends TestCase
         );
     }
 
-    public function testLoadBaseConfig()
+    public function dataProviderTestLoadDefaultSniffer()
     {
-        $expected = MysqlTableSniffer::class;
-        $this->FixtureManager->loadConfig();
-        $conf = Configure::readOrFail('TestSuiteLightSniffers.' . \Cake\Database\Driver\Mysql::class);
-        $this->assertEquals($expected, $conf);
+        return [
+            [Mysql::class, MysqlTriggerBasedTableSniffer::class],
+            [Sqlite::class, SqliteTriggerBasedTableSniffer::class],
+            [Postgres::class, PostgresTriggerBasedTableSniffer::class],
+        ];
     }
 
-    public function testLoadCustomConfig()
+    /**
+     * @param $driver
+     * @param $sniffer
+     * @dataProvider dataProviderTestLoadDefaultSniffer
+     */
+    public function testGetDefaultTableSniffers($driver, $sniffer)
+    {
+        $act = $this->FixtureManager->getDefaultTableSniffers()[$driver];
+        $this->assertEquals($sniffer, $act);
+    }
+
+    public function testLoadSnifferFromConfigFile()
     {
         $expected = '\testTableSniffer';
         $this->FixtureManager->loadConfig();
         $conf = Configure::readOrFail('TestSuiteLightSniffers.\testDriver');
         $this->assertEquals($expected, $conf);
+    }
+
+    public function testGetConnectionSnifferNameOnNonExistingConnection()
+    {
+        $this->expectException(\PHPUnit\Framework\Exception::class);
+        $this->FixtureManager->getConnectionSnifferName('dummy');
+    }
+
+    public function testGetConnectionSnifferNameOnConnection()
+    {
+        $sniffer = 'FooSniffer';
+        $connectionName = 'testGetConnectionSnifferNameOnConnection';
+        $testConfig = ConnectionManager::getConfig('test');
+        $testConfig['tableSniffer'] = $sniffer;
+        ConnectionManager::setConfig($connectionName, $testConfig);
+        $act = $this->FixtureManager->getConnectionSnifferName($connectionName);
+        $this->assertSame($sniffer, $act);
+        ConnectionManager::drop($connectionName);
+    }
+
+    public function testFetchActiveConnections()
+    {
+        $this->FixtureManager->fetchActiveConnections();
+        $connections = $this->FixtureManager->getActiveConnections();
+
+        $this->assertSame(1, count($connections));
+        $this->assertSame(true, in_array('test', $connections));
+    }
+
+    public function testSkipIgnoredConnection()
+    {
+        $ignored = 'FooConnection';
+
+        $act = $this->FixtureManager->skipConnection($ignored, [$ignored]);
+        $this->assertSame(true, $act);
+
+        $act = $this->FixtureManager->skipConnection('test', [$ignored]);
+        $this->assertSame(false, $act);
+
+        $act = $this->FixtureManager->skipConnection('testconnection', [$ignored]);
+        $this->assertSame(true, $act);
+
+        $act = $this->FixtureManager->skipConnection('test_connection', [$ignored]);
+        $this->assertSame(false, $act);
+
+        $connectionName = 'test_ConnectionToBeIgnored';
+        $testConfig = ConnectionManager::getConfig('test');
+        $testConfig['skipInTestSuiteLight'] = true;
+        ConnectionManager::setConfig($connectionName, $testConfig);
+        $act = $this->FixtureManager->skipConnection($connectionName, [$ignored]);
+        $this->assertSame(true, $act);
+        ConnectionManager::drop($connectionName);
     }
 }

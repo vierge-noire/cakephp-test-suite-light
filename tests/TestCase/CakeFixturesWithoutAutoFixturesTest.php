@@ -15,10 +15,10 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
 use TestApp\Model\Table\CountriesTable;
+use TestApp\Test\Fixture\CountriesFixture;
 
-class CakephpTestSuiteLight extends TestCase
+class CakeFixturesWithoutAutoFixturesTest extends TestCase
 {
     /**
      * @var CountriesTable
@@ -46,7 +46,7 @@ class CakephpTestSuiteLight extends TestCase
     /**
      * For the moment, CakeFixtures are simply ignored
      */
-    public function testGetcountryFromCakeFixtures()
+    public function testGetCountryFromCakeFixtures()
     {
         $this->loadFixtures('Countries');
         $countries = $this->Countries->find();

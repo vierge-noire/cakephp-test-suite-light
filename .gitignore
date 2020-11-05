@@ -5,3 +5,4 @@ dummy_database
 composer.lock
 /.phpunit.result.cache
 /tmp/
+.env

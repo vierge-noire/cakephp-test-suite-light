@@ -16,6 +16,10 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 use Cake\Database\Connection;
 
+/**
+ * Class PostgresTableSniffer
+ * @deprecated Use trigger-based sniffers
+ */
 class PostgresTableSniffer extends BaseTableSniffer
 {
     /**
@@ -33,8 +37,10 @@ class PostgresTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function truncateTables(array $tables)
+    public function truncateDirtyTables()
     {
+        $tables = $this->getDirtyTables();
+
         if (empty($tables)) {
             return;
         }
@@ -51,7 +57,7 @@ class PostgresTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function getAllTables(): array
+    public function fetchAllTables(): array
     {
         return $this->fetchQuery("            
             SELECT table_name

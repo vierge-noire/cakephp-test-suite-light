@@ -14,18 +14,16 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Test\DropTablesTestCase;
 
 
-use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
-use TestApp\Model\Entity\City;
-use TestApp\Model\Entity\Country;
+use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
+use TestApp\Test\Fixture\CitiesFixture;
+use TestApp\Test\Fixture\CountriesFixture;
 
 class TableSnifferDropTablesTest extends TestCase
 {
@@ -66,9 +64,6 @@ class TableSnifferDropTablesTest extends TestCase
 
     public function tearDown()
     {
-        $this->FixtureManager->unload($this);
-        $this->FixtureManager->load($this);
-
         unset($this->TableSniffer);
         unset($this->FixtureManager);
         unset($this->Countries);
@@ -79,7 +74,7 @@ class TableSnifferDropTablesTest extends TestCase
     }
 
     /**
-     * After dropping all tables, only the package migration table should remain
+     * After dropping all tables, only the dirty table collecting table should remain
      * This should never be dropped
      */
     public function testGetAllTablesAfterDroppingAll()
@@ -94,7 +89,13 @@ class TableSnifferDropTablesTest extends TestCase
         );
 
         $this->FixtureManager->dropTables('test');
-        $this->assertSame([], $this->TableSniffer->getAllTables());
+
+        if ($this->TableSniffer->implementsTriggers()) {
+            $expected = [TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR];
+        } else {
+            $expected = [];
+        }
+        $this->assertSame($expected, $this->TableSniffer->fetchAllTables());
 
         $this->FixtureManager->unload($this);
     }

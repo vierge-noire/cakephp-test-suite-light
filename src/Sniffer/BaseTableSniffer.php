@@ -25,25 +25,21 @@ abstract class BaseTableSniffer
     protected $connection;
 
     /**
-     * Find all tables where an insert happened
-     * This also includes empty tables, where a delete
-     * was performed after an insert
-     * @return array
+     * @var array|null
      */
-    abstract public function getDirtyTables(): array;
+    protected $allTables;
 
     /**
-     * Truncate all the tables provided
-     * @param array $tables
+     * Truncate all the tables found in the dirty table collector
      * @return void
      */
-    abstract public function truncateTables(array $tables);
+    abstract public function truncateDirtyTables();
 
     /**
      * List all tables
      * @return array
      */
-    abstract public function getAllTables(): array;
+    abstract public function fetchAllTables(): array;
 
     /**
      * Drop tables passed as a parameter
@@ -59,6 +55,16 @@ abstract class BaseTableSniffer
     public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
+        $this->setup();
+    }
+
+    /**
+     * Setup method
+     * @return void
+     */
+    public function setup()
+    {
+        $this->getAllTables(true);
     }
 
     /**
@@ -78,6 +84,17 @@ abstract class BaseTableSniffer
     }
 
     /**
+     * Find all tables where an insert happened
+     * This also includes empty tables, where a delete
+     * was performed after an insert
+     * @return array
+     */
+    public function getDirtyTables(): array
+    {
+        return $this->fetchQuery("SELECT table_name FROM " . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR);
+    }
+
+    /**
      * Execute a query returning a list of table
      * In case where the query fails because the database queried does
      * not exist, an exception is thrown.
@@ -86,7 +103,7 @@ abstract class BaseTableSniffer
      *
      * @return array
      */
-    protected function fetchQuery(string $query): array
+    public function fetchQuery(string $query): array
     {
         try {
             $tables = $this->getConnection()->execute($query)->fetchAll();
@@ -117,5 +134,70 @@ abstract class BaseTableSniffer
     public function implodeSpecial(string $glueBefore, array $array, string $glueAfter): string
     {
         return $glueBefore . implode($glueAfter.$glueBefore, $array) . $glueAfter;
+    }
+
+    /**
+     * The dirty table collector should never be dropped
+     * This method helps removing it from a list of tables
+     * @param array $tables
+     * @return void
+     */
+    public function removeDirtyTableCollectorFromArray(array &$tables)
+    {
+        if (($key = array_search(TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR, $tables)) !== false) {
+            unset($tables[$key]);
+        }
+    }
+
+    /**
+     * Get all tables except the phinx tables
+     * * @param bool $forceFetch
+     * @return array
+     */
+    public function getAllTablesExceptPhinxlogs(bool $forceFetch = false): array
+    {
+        $allTables = $this->getAllTables($forceFetch);
+        foreach ($allTables as $i => $table) {
+            if (strpos($table, 'phinxlog') !== false) {
+                unset($allTables[$i]);
+            }
+        }
+        return $allTables;
+    }
+
+    /**
+     * @param bool $forceFetch
+     * @return array
+     */
+    public function getAllTables(bool $forceFetch = false): array
+    {
+        if (is_null($this->allTables) || $forceFetch) {
+            $this->allTables = $this->fetchAllTables();
+        }
+        return $this->allTables;
+    }
+
+    /**
+     * Create the table gathering the dirty tables
+     * @return void
+     */
+    public function createDirtyTableCollector()
+    {
+        $dirtyTable = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        $this->getConnection()->execute("
+            CREATE TABLE IF NOT EXISTS {$dirtyTable} (
+            table_name VARCHAR(128) PRIMARY KEY
+            );
+        ");
+    }
+
+    /**
+     * Checks if the present class implements triggers
+     * @return bool
+     */
+    public function implementsTriggers(): bool
+    {
+        $class = new \ReflectionClass($this);
+        return $class->implementsInterface(TriggerBasedTableSnifferInterface::class);
     }
 }

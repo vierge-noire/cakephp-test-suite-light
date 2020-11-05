@@ -14,18 +14,19 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
-use Cake\Database\Exception;
 use Cake\Datasource\ConnectionManager;
-
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Sniffer\SqliteTableSniffer;
-use CakephpTestSuiteLight\Test\Fixture\CitiesFixture;
-use CakephpTestSuiteLight\Test\Fixture\CountriesFixture;
+use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
+use TestApp\Test\Fixture\CitiesFixture;
+use TestApp\Test\Fixture\CountriesFixture;
 
 class TableSnifferTest extends TestCase
 {
+    use ArrayComparerTrait;
+
     public $fixtures = [
         // The order here is important
         CountriesFixture::class,
@@ -68,16 +69,9 @@ class TableSnifferTest extends TestCase
         ConnectionManager::setConfig('test_dummy_connection', $config);
     }
 
-    /**
-     * Following the convention, the TableSniffers must be the name of
-     * the driver (e.g. Mysql)  + "TableSniffer"
-     */
-    public function testTableSnifferFinder()
+    private function driverIs(string $driver): bool
     {
-        $driver = explode('\\', getenv('DB_DRIVER'));
-        $driver = array_pop($driver);
-        $expectedClass = '\CakephpTestSuiteLight\Sniffer\\' . $driver . 'TableSniffer';
-        $this->assertInstanceOf($expectedClass, $this->TableSniffer);
+        return ConnectionManager::getConfig('test')['driver'] === 'Cake\Database\Driver\\' . $driver;
     }
 
     public function dataProviderOfDirtyTables()
@@ -92,12 +86,46 @@ class TableSnifferTest extends TestCase
      * All tables should be clean before every test
      * @dataProvider dataProviderOfDirtyTables
      */
-    public function testGetDirtyTables(bool $loadFixtures)
+    public function testGetDirtyTablesWithLoadFixtures(bool $loadFixtures)
+    {
+        if ($loadFixtures) {
+            $this->loadFixtures();
+            $expected = $this->TableSniffer->implementsTriggers() ? 3 : 2;      // Expect countries, cities, but also the dirty_table table
+        } else {
+            $expected = 0;
+        }
+        $this->assertSame($expected, count($this->TableSniffer->getDirtyTables()));
+    }
+
+    /**
+     * All tables should be clean before every test
+     * @dataProvider dataProviderOfDirtyTables
+     */
+    public function testGetDirtyTablesWithLoadOneCity(bool $loadFixtures)
+    {
+        if ($loadFixtures) {
+            $this->skipIf(
+                $this->driverIs('Postgres'),
+                "Foreign key constrains on countries will lead to failed insert on Postgres."
+            );
+            $this->loadFixtures('Cities');
+            $expected = $this->TableSniffer->implementsTriggers() ? 2 : 1;      // Expect cities, but also the dirty_table table
+        } else {
+            $expected = 0;
+        }
+        $this->assertSame($expected, count($this->TableSniffer->getDirtyTables()));
+    }
+
+    /**
+     * All tables should be clean before every test
+     * @dataProvider dataProviderOfDirtyTables
+     */
+    public function testGetDirtyTablesWithLoadOneCountry(bool $loadFixtures)
     {
         if ($loadFixtures)
         {
-            $this->loadFixtures();
-            $expected = 2;
+            $this->loadFixtures('Countries');
+            $expected = $this->TableSniffer->implementsTriggers() ? 2 : 1;      // Expect cities, but also the dirty_table table
         } else {
             $expected = 0;
         }
@@ -107,31 +135,16 @@ class TableSnifferTest extends TestCase
     /**
      * If a DB is not created, the sniffers should throw an exception
      */
-    public function testGetDirtyTablesOnNonExistentDB()
+    public function testGetSnifferOnNonExistentDB()
     {
         $this->createNonExistentConnection();
-        $sniffer = $this->FixtureManager->getSniffer('test_dummy_connection');
-        if ($sniffer instanceof SqliteTableSniffer) {
-            $this->assertTrue(true);
-        } else {
-            $this->expectException(Exception::class);
-        }
-        $this->FixtureManager->getSniffer('test_dummy_connection')->getDirtyTables();
-    }
 
-    /**
-     * If a DB is not created, the sniffers should throw an exception
-     */
-    public function testGetAllTablesOnNonExistentDB()
-    {
-        $this->createNonExistentConnection();
-        $sniffer = $this->FixtureManager->getSniffer('test_dummy_connection');
-        if ($sniffer instanceof SqliteTableSniffer) {
+        if ($this->driverIs('Sqlite')) {
             $this->assertTrue(true);
         } else {
-            $this->expectException(Exception::class);
+            $this->expectException(\Exception::class);
         }
-        $this->FixtureManager->getSniffer('test_dummy_connection')->getAllTables();
+        $this->FixtureManager->getSniffer('test_dummy_connection');
     }
 
     public function testImplodeSpecial()
@@ -141,5 +154,45 @@ class TableSnifferTest extends TestCase
         $glueAfter = 'DEF';
         $expect = 'ABCfooDEFABCbarDEF';
         $this->assertSame($expect, $this->TableSniffer->implodeSpecial($glueBefore, $array, $glueAfter));
+    }
+
+    public function testCheckTriggersAfterSetup()
+    {
+        $this->skipIf(!$this->TableSniffer->implementsTriggers());
+
+        $expected = [
+            'dirty_table_spy_cities',
+            'dirty_table_spy_countries',
+        ];
+        if ($this->driverIs('Mysql')) {
+            $found = $this->TableSniffer->fetchQuery('SHOW TRIGGERS');
+        } elseif ($this->driverIs('Postgres')) {
+            $found = $this->TableSniffer->fetchQuery('SELECT tgname FROM pg_trigger');
+            $expected[] = 'dirty_table_spy_' . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        } elseif ($this->driverIs('Sqlite')) {
+            $found = $this->TableSniffer->fetchQuery('SELECT name FROM sqlite_master WHERE type = "trigger"');
+            $expected[] = 'dirty_table_spy_' . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        }
+
+        foreach ($expected as $trigger) {
+            $this->assertSame(true, in_array($trigger, $found), "Trigger $trigger was not found");
+        }
+    }
+
+    public function testGetAllTablesExceptPhinxlogs()
+    {
+        $found = $this->TableSniffer->getAllTablesExceptPhinxlogs();
+        $expected = [
+            'cities',
+            'countries',
+        ];
+
+        if ($this->TableSniffer->implementsTriggers()) {
+            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        } else {
+            $this->TableSniffer->removeDirtyTableCollectorFromArray($found);
+        }
+
+        $this->assertArraysHaveSameContent($expected, $found);
     }
 }

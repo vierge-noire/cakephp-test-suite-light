@@ -46,6 +46,7 @@ class FixtureInjectorTest extends TestCase
     public function testStartTestWithCakeTestCase()
     {
         $test = $this->createMock(\Cake\TestSuite\TestCase::class);
+        $test->fixtures = null;
         $this->FixtureInjector->startTest($test);
         $this->assertTrue(true);
     }
@@ -66,6 +67,7 @@ class FixtureInjectorTest extends TestCase
     public function testEndTestWithCakeTestCase()
     {
         $test = $this->createMock(\Cake\TestSuite\TestCase::class);
+        $test->fixtures = null;
         $this->FixtureInjector->endTest($test, 0);
         $this->assertTrue(true);
     }

@@ -16,6 +16,10 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 use Cake\Database\Connection;
 
+/**
+ * Class MysqlTableSniffer
+ * @deprecated Use trigger-based sniffers
+ */
 class MysqlTableSniffer extends BaseTableSniffer
 {
     /**
@@ -36,8 +40,10 @@ class MysqlTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function truncateTables(array $tables)
+    public function truncateDirtyTables()
     {
+        $tables = $this->getDirtyTables();
+
         if (empty($tables)) {
             return;
         }
@@ -58,7 +64,7 @@ class MysqlTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function getAllTables(): array
+    public function fetchAllTables(): array
     {
         return $this->fetchQuery("
             SELECT table_name
