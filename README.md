@@ -30,19 +30,20 @@ The fixtures will be created in the test database(s) defined in your [configurat
 
 ### Ignoring connections
 
-The package will empty the tables found in all test databases. If you wish to ignore a given connection, you may create a 
-`config/test_suite_light.php` file and provide the connections that should be ignored:
+The package will empty the tables found in all test databases. If you wish to ignore a given connection, you may 
+provide the `skipInTestSuiteLight` key to `true` in your `config/app.php`. E.g.:  
 
 ```$xslt
+In config/app.php
 <?php
-
-return [   
-    'TestSuiteLightIgnoredConnections' => [
-        'test_foo_connection_to_be_ignored',
-        'test_bar_connection_to_be_ignored',
-        ...
-    ],
-];
+...
+'test_connection_to_be_skipped' => [
+    'className' => Connection::class,
+    'driver' => Mysql::class,
+    'persistent' => false,
+    ...
+    'skipInTestSuiteLight' => true
+],
 ```
 
 This can be useful for example if you have connections to a third party server in the cloud that should be ignored.
@@ -67,18 +68,21 @@ the `BaseTableSniffer`.
 
 You should then map in your `config/test_suite_light.php` file the driver to
 the custom table sniffer. E.g.:
-
+You should then map in your `config/app.php` file the driver to
+the custom table sniffer for each relevant connection. E.g.:
 ```$xslt
+In config/app.php
 <?php
-
-return [   
-    'TestSuiteLightSniffers' => [
-        '\Some\Database\Driver' => '\Custom\Table\Sniffer', 
-    ],
-];
+...
+'test' => [
+    'className' => Connection::class,
+    'driver' => Mysql::class,
+    'persistent' => false,
+    ...
+    'tableSniffer' => '\Your\Custom\Table\Sniffer'
+],
 ``` 
  
-
 ### Disabling the truncation
 
 You may wish to skip the truncation of tables between the tests. For example if you know in advance that
