@@ -29,7 +29,7 @@ class MysqlTableSniffer extends BaseTableSniffer
             WHERE
                 TABLE_SCHEMA = DATABASE()
                 AND table_name NOT LIKE '%phinxlog'
-                AND AUTO_INCREMENT > 1;
+                AND TABLE_ROWS > 0;
         ");
     }
 
