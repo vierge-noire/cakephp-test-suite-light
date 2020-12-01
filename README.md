@@ -136,7 +136,7 @@ You like our work? [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](htt
 
 ## License
 
-The CakePHPFixtureFactories plugin is offered under an [MIT license](https://opensource.org/licenses/mit-license.php).
+The CakephpTestSuiteLight plugin is offered under an [MIT license](https://opensource.org/licenses/mit-license.php).
 
 Copyright 2020 Juan Pablo Ramirez and Nicolas Masson
 
