@@ -123,6 +123,17 @@ overall speed of your tests.
 ***Note: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
 Only one listener is required, which is the one described in the section *Installation*.
 
+## Authors
+* Juan Pablo Ramirez
+* Nicolas Masson
+
+
+## Support
+Contact us at vierge.noire.info@gmail.com for professional assistance.
+
+You like our work? [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L3L52P9JA)
+
+
 ## License
 
 The CakePHPFixtureFactories plugin is offered under an [MIT license](https://opensource.org/licenses/mit-license.php).
@@ -130,7 +141,3 @@ The CakePHPFixtureFactories plugin is offered under an [MIT license](https://ope
 Copyright 2020 Juan Pablo Ramirez and Nicolas Masson
 
 Licensed under The MIT License Redistributions of files must retain the above copyright notice.
-
-## Authors
-* Juan Pablo Ramirez
-* Nicolas Masson
