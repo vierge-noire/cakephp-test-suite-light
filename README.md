@@ -66,8 +66,6 @@ by SQL queries. These are called `TableSniffers` and there are located in the `s
 If you use a different database engine, you will have to provide your own. It should extend
 the `BaseTableSniffer`.
 
-You should then map in your `config/test_suite_light.php` file the driver to
-the custom table sniffer. E.g.:
 You should then map in your `config/app.php` file the driver to
 the custom table sniffer for each relevant connection. E.g.:
 ```$xslt
