@@ -11,24 +11,25 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace CakephpTestSuiteLight\Test\DropTablesTestCase;
+namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\TestUtil;
-use TestApp\Model\Entity\City;
-use TestApp\Model\Entity\Country;
+use Migrations\Migrations;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
 
-class TableSnifferDropCountriesTest extends TestCase
+class TableSnifferDropTablesTest extends TestCase
 {
     public $fixtures = [
         // The order here is important
@@ -60,19 +61,74 @@ class TableSnifferDropCountriesTest extends TestCase
     public function setUp()
     {
         $this->FixtureManager = new FixtureManager();
-        $this->TableSniffer = $this->FixtureManager->getSniffer('test');
+        $this->TableSniffer = SnifferRegistry::get('test');
         $this->Countries = TableRegistry::getTableLocator()->get('Countries');
         $this->Cities = TableRegistry::getTableLocator()->get('Cities');
     }
 
     public function tearDown()
     {
+        $this->runMigrations();
+
+        $this->TableSniffer->start();
+
         unset($this->TableSniffer);
         unset($this->FixtureManager);
         unset($this->Countries);
         unset($this->Cities);
+        ConnectionManager::drop('test_dummy_connection');
 
         parent::tearDown();
+    }
+
+    /**
+     * After dropping all tables, only the dirty table collecting table should remain
+     * This should never be dropped
+     */
+    public function testGetAllTablesAfterDroppingAll()
+    {
+        $this->assertSame(
+            1,
+            $this->Countries->find()->count()
+        );
+        $this->assertSame(
+            1,
+            $this->Cities->find()->count()
+        );
+
+        $this->FixtureManager->dropTables('test');
+
+        $this->assertSame([], $this->TableSniffer->fetchAllTables());
+
+        $this->FixtureManager->unload($this);
+    }
+
+    public function testDropWithForeignKeyCheckCities()
+    {
+        $this->activateForeignKeysOnSqlite();
+        $this->createCity();
+        $this->TableSniffer->dropTables($this->TableSniffer->fetchAllTables());
+
+        $this->expectException(\PDOException::class);
+        $this->Cities->find()->first();
+    }
+
+    public function testDropWithForeignKeyCheckCountries()
+    {
+        $this->activateForeignKeysOnSqlite();
+        $this->createCity();    // This will create a country too
+        $this->TableSniffer->dropTables($this->TableSniffer->fetchAllTables());
+
+        $this->expectException(\PDOException::class);
+        $this->Countries->find()->first();
+    }
+
+    private function runMigrations()
+    {
+        $migrations = new Migrations();
+        $migrations->migrate([
+            'connection' => 'test',
+        ]);
     }
 
     private function activateForeignKeysOnSqlite() {
@@ -82,7 +138,7 @@ class TableSnifferDropCountriesTest extends TestCase
         }
     }
 
-    private function createCountry(): Country
+    private function createCountry(): EntityInterface
     {
         $country = $this->Countries->newEntity([
             'name' => 'Foo',
@@ -90,7 +146,7 @@ class TableSnifferDropCountriesTest extends TestCase
         return $this->Countries->saveOrFail($country);
     }
 
-    private function createCity(): City
+    private function createCity(): EntityInterface
     {
         $city = $this->Cities->newEntity([
             'uuid_primary_key' => TestUtil::makeUuid(),
@@ -99,15 +155,5 @@ class TableSnifferDropCountriesTest extends TestCase
             'country_id' => $this->createCountry()->id
         ]);
         return $this->Cities->saveOrFail($city);
-    }
-
-    public function testDropWithForeignKeyCheckCities()
-    {
-        $this->activateForeignKeysOnSqlite();
-        $this->createCity();    // This will create a country too
-        $this->TableSniffer->dropTables($this->TableSniffer->fetchAllTables());
-
-        $this->expectException(\PDOException::class);
-        $this->Countries->find()->first();
     }
 }

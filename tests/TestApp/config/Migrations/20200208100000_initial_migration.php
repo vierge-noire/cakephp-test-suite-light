@@ -13,7 +13,7 @@ declare(strict_types=1);
  */
 
 use Cake\Datasource\ConnectionManager;
-use CakephpTestSuiteLight\FixtureManager;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Migrations\AbstractMigration;
 
 class InitialMigration extends AbstractMigration
@@ -23,8 +23,7 @@ class InitialMigration extends AbstractMigration
      */
     public function up()
     {
-        $manager = new FixtureManager();
-        $supportsUuid = $manager->getSniffer('test')->implementsTriggers();
+        $supportsUuid = SnifferRegistry::get('test')->implementsTriggers();
 
         // Sqlite is not happy with the composite and/or uuid concept
         if (!$supportsUuid || ConnectionManager::getConfig('test')['driver'] === 'Cake\Database\Driver\Sqlite') {

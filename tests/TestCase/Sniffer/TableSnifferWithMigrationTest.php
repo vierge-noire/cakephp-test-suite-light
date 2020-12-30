@@ -15,10 +15,8 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
 use Cake\TestSuite\TestCase;
-use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use Migrations\Migrations;
 
@@ -36,27 +34,51 @@ class TableSnifferWithMigrationTest extends TestCase
      */
     public $TableSniffer;
 
+    /**
+     * @var bool
+     */
+    public static $snifferWasInTempMod;
 
-    public function setUp(): void
+    public static function setUpBeforeClass()
     {
-        $fixtureManager = new FixtureManager();
-        $this->TableSniffer = $fixtureManager->getSniffer('test');
+        if (SnifferRegistry::get('test')->implementsTriggers() && SnifferRegistry::get('test')->isInTempMode()) {
+            SnifferRegistry::get('test')->activateMainMode();
+            self::$snifferWasInTempMod = true;
+        }
+    }
+
+    public static function tearDownAfterClass()
+    {
+        if (SnifferRegistry::get('test')->implementsTriggers() &&  self::$snifferWasInTempMod) {
+            SnifferRegistry::get('test')->activateTempMode();
+        }
+    }
+
+    public function setUp()
+    {
+        $this->TableSniffer = SnifferRegistry::get('test');
 
         $config = [
             'connection' => 'test',
             'source' => 'TestMigrations',
         ];
 
-        $this->migrations = new Migrations($config);
+        $this->migrations = new Migrations();
         $this->migrations->migrate($config);
     }
 
-    public function tearDown(): void
+    public function tearDown()
     {
         unset($this->TableSniffer);
 
-        $this->migrations->rollback();
-        $this->migrations->rollback();
+        $this->migrations->rollback([
+            'connection' => 'test',
+            'source' => 'TestMigrations',
+        ]);
+        $this->migrations->rollback([
+            'connection' => 'test',
+            'source' => 'TestMigrations',
+        ]);
     }
 
     protected function countProducts(): int
@@ -72,7 +94,7 @@ class TableSnifferWithMigrationTest extends TestCase
      * after the setup of the sniffer triggers,
      * it is not marked as dirty
      */
-    public function testPopulateWithMigrationsWithoutSetup()
+    public function testPopulateWithMigrationsWithoutRestart()
     {
         $tables = $this->TableSniffer->fetchAllTables();
         $this->assertTrue(in_array('products', $tables));
@@ -84,38 +106,41 @@ class TableSnifferWithMigrationTest extends TestCase
         }
     }
 
-    public function testPopulateWithMigrationsWithSetup()
+    public function testPopulateWithMigrationsWithRestart()
     {
         $tables = $this->TableSniffer->fetchAllTables();
         $this->assertTrue(in_array('products', $tables));
 
         // Rollback the table products population migration
-        $this->migrations->rollback();
+        $this->migrations->rollback([
+            'connection' => 'test',
+            'source' => 'TestMigrations',
+        ]);
 
         $expected = [
             'dirty_table_spy_countries',
             'dirty_table_spy_cities',
         ];
-        if (!($this->TableSniffer instanceof MysqlTriggerBasedTableSniffer)) {
-            $expected[] = 'dirty_table_spy_' . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
-        }
 
         if ($this->TableSniffer->implementsTriggers()) {
             $this->assertArraysHaveSameContent($expected, $this->TableSniffer->getTriggers());
         }
 
         // Reset the triggers
-        $this->TableSniffer->setup();
+        $this->TableSniffer->restart();
 
         if ($this->TableSniffer->implementsTriggers()) {
             $expected[] = 'dirty_table_spy_products';
-            $this->assertArraysHaveSameContent( $expected, $this->TableSniffer->getTriggers());
+            $this->assertArraysHaveSameContent($expected, $this->TableSniffer->getTriggers());
         }
 
         $nProducts = $this->countProducts();
 
         // Populate the products table
-        $this->migrations->migrate();
+        $this->migrations->migrate([
+            'connection' => 'test',
+            'source' => 'TestMigrations',
+        ]);
 
         if ($this->TableSniffer->implementsTriggers()) {
             $this->assertArraysHaveSameContent($expected, $this->TableSniffer->getTriggers());

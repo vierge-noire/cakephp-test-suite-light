@@ -30,10 +30,16 @@ abstract class BaseTableSniffer
     protected $allTables;
 
     /**
-     * Truncate all the tables found in the dirty table collector
+     * Truncate all the dirty tables
      * @return void
      */
     abstract public function truncateDirtyTables();
+
+    /**
+     * Get all the dirty tables
+     * @return array
+     */
+    abstract public function getDirtyTables(): array;
 
     /**
      * List all tables
@@ -54,17 +60,8 @@ abstract class BaseTableSniffer
      */
     public function __construct(ConnectionInterface $connection)
     {
-        $this->connection = $connection;
-        $this->setup();
-    }
-
-    /**
-     * Setup method
-     * @return void
-     */
-    public function setup()
-    {
-        $this->getAllTables(true);
+        $this->setConnection($connection);
+        $this->start();
     }
 
     /**
@@ -84,14 +81,33 @@ abstract class BaseTableSniffer
     }
 
     /**
-     * Find all tables where an insert happened
-     * This also includes empty tables, where a delete
-     * was performed after an insert
-     * @return array
+     * Get the sniffer started
+     * Typically create the dirty table collector
+     * Truncate all tables
+     * Create the spying triggers
+     * @return void
      */
-    public function getDirtyTables(): array
+    public function start()
     {
-        return $this->fetchQuery("SELECT table_name FROM " . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR);
+        $this->getAllTables(true);
+    }
+
+    /**
+     * Stop spying
+     * @return void
+     */
+    public function shutdown()
+    {}
+
+    /**
+     * Stop spying and restart
+     * Useful if the schema or the
+     * dirty table collector changed
+     */
+    public function restart()
+    {
+        $this->shutdown();
+        $this->start();
     }
 
     /**
@@ -137,19 +153,6 @@ abstract class BaseTableSniffer
     }
 
     /**
-     * The dirty table collector should never be dropped
-     * This method helps removing it from a list of tables
-     * @param array $tables
-     * @return void
-     */
-    public function removeDirtyTableCollectorFromArray(array &$tables)
-    {
-        if (($key = array_search(TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR, $tables)) !== false) {
-            unset($tables[$key]);
-        }
-    }
-
-    /**
      * Get all tables except the phinx tables
      * * @param bool $forceFetch
      * @return array
@@ -178,26 +181,11 @@ abstract class BaseTableSniffer
     }
 
     /**
-     * Create the table gathering the dirty tables
-     * @return void
-     */
-    public function createDirtyTableCollector()
-    {
-        $dirtyTable = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
-        $this->getConnection()->execute("
-            CREATE TABLE IF NOT EXISTS {$dirtyTable} (
-            table_name VARCHAR(128) PRIMARY KEY
-            );
-        ");
-    }
-
-    /**
      * Checks if the present class implements triggers
      * @return bool
      */
     public function implementsTriggers(): bool
     {
-        $class = new \ReflectionClass($this);
-        return $class->implementsInterface(TriggerBasedTableSnifferInterface::class);
+        return $this instanceof BaseTriggerBasedTableSniffer;
     }
 }

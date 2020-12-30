@@ -15,57 +15,27 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 
 use Cake\Database\Connection;
+use CakephpTestSuiteLight\Sniffer\DriverTraits\PostgresSnifferTrait;
 
-class PostgresTriggerBasedTableSniffer extends BaseTableSniffer implements TriggerBasedTableSnifferInterface
+class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
 {
+    use PostgresSnifferTrait;
+
     /**
      * @inheritDoc
      */
     public function truncateDirtyTables()
     {
-        $this->getConnection()->transactional(function (Connection $connection) {
-            $connection->execute('CALL TruncateDirtyTables();');
-            $connection->execute('TRUNCATE TABLE ' . self::DIRTY_TABLE_COLLECTOR . ' RESTART IDENTITY CASCADE;');
-        });
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("            
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'            
-        ");
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function dropTables(array $tables)
-    {
-        $this->removeDirtyTableCollectorFromArray($tables);
-
-        if (empty($tables)) {
-            return;
-        }
-
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $connection->transactional(function(Connection $connection) use ($tables) {
-                foreach ($tables as $table) {
-                    $connection->execute(
-                        'DROP TABLE IF EXISTS "' . $table  . '" CASCADE;'
-                    );
-                }
-                // Truncate dirty table collector
-                $connection
-                    ->newQuery()
-                    ->delete(self::DIRTY_TABLE_COLLECTOR)
-                    ->execute();
+        try {
+            $this->getConnection()->transactional(function (Connection $connection) {
+                $connection->execute('CALL TruncateDirtyTables();');
+                $connection->execute('TRUNCATE TABLE ' . self::DIRTY_TABLE_COLLECTOR . ' RESTART IDENTITY CASCADE;');
             });
-        });
+        } catch (\Exception $e) {
+            // The dirty table collector might not be found because the session
+            // was interrupted.
+            $this->restart();
+        }
     }
 
     /**
@@ -81,15 +51,18 @@ class PostgresTriggerBasedTableSniffer extends BaseTableSniffer implements Trigg
 
         $stmts = [];
         foreach ($this->getAllTablesExceptPhinxlogs() as $table) {
+            if ($table === $dirtyTable) {
+                continue;
+            }
             $stmts[] = "
                 CREATE OR REPLACE FUNCTION mark_table_{$table}_as_dirty() RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
                 DECLARE
                     spy_is_inactive {$dirtyTable}%ROWTYPE;                    
                 BEGIN
                     SELECT * FROM {$dirtyTable} WHERE table_name = '{$table}' LIMIT 1 INTO spy_is_inactive;                                                 
-                    IF NOT FOUND THEN                
-                        INSERT INTO {$dirtyTable} (table_name) VALUES ('{$table}');                        
-                    END IF;                                                               
+                    IF NOT FOUND THEN
+                        INSERT INTO {$dirtyTable} (table_name) VALUES ('{$table}'), ('{$dirtyTable}') ON CONFLICT DO NOTHING;                        
+                    END IF;
                     RETURN NEW;
                 END;                
                 $$
@@ -109,19 +82,30 @@ class PostgresTriggerBasedTableSniffer extends BaseTableSniffer implements Trigg
     /**
      * @inheritDoc
      */
-    public function setup()
+    public function start()
     {
-        parent::setup();
+        parent::start();
 
-        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-
-        // create dirty tables collector
         $this->createDirtyTableCollector();
-
-        // create triggers
         $this->createTriggers();
+        $this->createTruncateDirtyTablesProcedure();
+        $this->cleanAllTables();
+    }
 
-        // create truncate procedure
+    /**
+     * @inheritDoc
+     */
+    public function shutdown()
+    {
+        parent::shutdown();
+
+        $this->dropTriggers();
+        $this->dropDirtyTableCollector();
+    }
+
+    public function createTruncateDirtyTablesProcedure()
+    {
+        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $this->getConnection()->execute("
             CREATE OR REPLACE PROCEDURE TruncateDirtyTables() AS $$
             DECLARE
@@ -145,37 +129,13 @@ class PostgresTriggerBasedTableSniffer extends BaseTableSniffer implements Trigg
     /**
      * @inheritDoc
      */
-    public function getTriggers(): array
+    public function markAllTablesAsDirty()
     {
-        $triggerPrefix = self::TRIGGER_PREFIX;
-        $triggers = $this->fetchQuery("
-            SELECT tgname
-            FROM pg_trigger
-            WHERE tgname LIKE '{$triggerPrefix}%'
-        ");
+        $tables = $this->getAllTablesExceptPhinxlogs();
+        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
+        $tables[] = $dirtyTable;
 
-        foreach ($triggers as $k => $trigger) {
-            if (strpos($trigger, self::TRIGGER_PREFIX) !== 0) {
-                unset($triggers[$k]);
-            }
-        }
-
-        return (array)$triggers;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function dropTriggers()
-    {
-        $triggers = $this->getTriggers();
-        if (empty($triggers)) {
-            return;
-        }
-
-        foreach ($triggers as $trigger) {
-            $table = substr($trigger, strlen(self::TRIGGER_PREFIX));
-            $this->getConnection()->execute("DROP TRIGGER {$trigger} ON {$table};");
-        }
+        $stmt = "INSERT INTO {$dirtyTable} VALUES ('" . implode("'), ('", $tables) . "') ON CONFLICT DO NOTHING";
+        $this->getConnection()->execute($stmt);
     }
 }

@@ -15,6 +15,7 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 
 use Cake\Database\Connection;
+use CakephpTestSuiteLight\Sniffer\DriverTraits\MysqlSnifferTrait;
 
 /**
  * Class MysqlTableSniffer
@@ -22,6 +23,8 @@ use Cake\Database\Connection;
  */
 class MysqlTableSniffer extends BaseTableSniffer
 {
+    use MysqlSnifferTrait;
+
     /**
      * @inheritDoc
      */
@@ -51,45 +54,7 @@ class MysqlTableSniffer extends BaseTableSniffer
         $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
             $connection->transactional(function(Connection $connection) use ($tables) {
                 $connection->execute(
-                    $this->implodeSpecial(
-                        "TRUNCATE TABLE `",
-                        $tables,
-                        "`;"
-                    )
-                );
-            });
-        });
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("
-            SELECT table_name
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = DATABASE();
-        ");
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function dropTables(array $tables)
-    {
-        if (empty($tables)) {
-            return;
-        }
-
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $connection->transactional(function(Connection $connection) use ($tables) {
-                $connection->execute(
-                    $this->implodeSpecial(
-                        'DROP TABLE IF EXISTS `',
-                        $tables,
-                        '`;'
-                    )
+                    $this->implodeSpecial("TRUNCATE TABLE `", $tables, "`;")
                 );
             });
         });

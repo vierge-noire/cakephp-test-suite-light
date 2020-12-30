@@ -58,9 +58,13 @@ class StatisticToolTest extends TestCase
     public function testCollectTestStatistics()
     {
         // Arrange
+        $this->StatisticTool->startsTestTime();
+        $this->StatisticTool->startsLoadingFixturesTime();
         $this->loadFixtures();
-        $time = 0.1239999;
-        $this->StatisticTool->collectTestStatistics($this, $time);
+        $this->StatisticTool->stopsLoadingFixturesTime();
+        $this->StatisticTool->stopsTestTime();
+
+        $this->StatisticTool->collectTestStatistics($this);
         $db = ConnectionManager::get('test')->config()['database'];
 
         // Act
@@ -70,10 +74,15 @@ class StatisticToolTest extends TestCase
         $this->assertSame(1, count($stats));
         $stats = $stats[0];
 
-        $this->assertSame(0.124, $stats[0]);
+        // Duration of the test
+        $this->assertSame(true, $stats[0] > 0);
+        // Test class name
         $this->assertSame(self::class, $stats[1]);
+        // Test method name
         $this->assertSame(__FUNCTION__, $stats[2]);
+        // Number of dirty tables
         $this->assertSame(2, $stats[3]);
+        // List of dirty tables
         $this->assertSame("$db.cities, $db.countries", $stats[4]);
     }
 

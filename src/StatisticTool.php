@@ -15,7 +15,8 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight;
 
 use Cake\Datasource\ConnectionManager;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use PHPUnit\Framework\Test;
 
 class StatisticTool
@@ -42,6 +43,26 @@ class StatisticTool
      * @var bool
      */
     private $isActivated;
+
+    /**
+     * @var float|null
+     */
+    private $startTestTime;
+
+    /**
+     * @var float|null
+     */
+    private $startLoadingFixtureTime;
+
+    /**
+     * @var float
+     */
+    private $testDuration;
+
+    /**
+     * @var float
+     */
+    public $fixturesLoadingTime;
 
     /**
      * @var float
@@ -79,7 +100,7 @@ class StatisticTool
     public function collectDirtyTables()
     {
         foreach ($this->getFixtureManager()->getActiveConnections() as $connectionName) {
-            $this->dirtyTables[$connectionName] = $this->getFixtureManager()->getSniffer($connectionName)->getDirtyTables();
+            $this->dirtyTables[$connectionName] = SnifferRegistry::get($connectionName)->getDirtyTables();
         }
     }
 
@@ -93,10 +114,9 @@ class StatisticTool
 
     /**
      * @param Test  $test
-     * @param float $time
      * @return void
      */
-    public function collectTestStatistics(Test $test, float $time)
+    public function collectTestStatistics(Test $test)
     {
         if ($this->isNotActivated()) {
             return;
@@ -108,11 +128,13 @@ class StatisticTool
         $testName = method_exists($test, 'getName') ? $test->getName() : 'Test name undefined';
 
         $this->statistics[] = [
-            round($time * 1000) / 1000,             // Time in seconds
-            get_class($test),                           // Test Class name
-            $testName,                           // Test method name
-            count($dirtyTables),                        // Number of dirty tables
-            implode(', ', $dirtyTables),           // Dirty tables
+            round($this->testDuration * 1000) / 1000,       // Test duration in seconds
+            get_class($test),                                   // Test Class name
+            $testName,                                          // Test method name
+            count($dirtyTables),                                // Number of dirty tables
+            implode(', ', $dirtyTables),                   // Dirty tables
+            $this->fixturesLoadingTime,                         // Time taken for the fixtures to load
+            $this->testDuration > 0 ? round($this->fixturesLoadingTime * 100 / $this->testDuration) : 0,         // Time taken for the fixtures to load in %
         ];
     }
 
@@ -136,7 +158,7 @@ class StatisticTool
         foreach ($this->getDirtyTables() as $connection => $dirtyTables) {
             $db = ConnectionManager::get($connection)->config()['database'];
             foreach ($dirtyTables as $i => $dirtyTable) {
-                if ($dirtyTable !== TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR) {
+                if (strpos($dirtyTable, BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR) === false) {
                     $dirtyTables[$i] = "$db.$dirtyTable";
                 } else {
                     unset($dirtyTables[$i]);
@@ -172,6 +194,8 @@ class StatisticTool
             'Test Method',
             '# Dirty Tables',
             'Dirty Tables',
+            'Static Fixtures Processing Time',
+            'Static Fixtures Processing (%)',
         ]);
 
         foreach ($this->statistics as $stat) {
@@ -220,5 +244,47 @@ class StatisticTool
     public function getFixtureManager(): FixtureManager
     {
         return $this->fixtureManager;
+    }
+
+    /**
+     * @return void
+     */
+    public function startsTestTime()
+    {
+        if ($this->isActivated) {
+            $this->startTestTime = \microtime(true);
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function startsLoadingFixturesTime()
+    {
+        if ($this->isActivated) {
+            $this->startLoadingFixtureTime = \microtime(true);
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function stopsTestTime()
+    {
+        if ($this->isActivated && $this->startTestTime !== null) {
+            $this->testDuration = \microtime(true) - $this->startTestTime;
+            $this->startTestTime = null;
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function stopsLoadingFixturesTime()
+    {
+        if ($this->isActivated && $this->startLoadingFixtureTime !== null) {
+            $this->fixturesLoadingTime = \microtime(true) - $this->startLoadingFixtureTime;
+            $this->startLoadingFixtureTime = null;
+        }
     }
 }

@@ -15,6 +15,7 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 
 use Cake\Database\Connection;
+use CakephpTestSuiteLight\Sniffer\DriverTraits\PostgresSnifferTrait;
 
 /**
  * Class PostgresTableSniffer
@@ -22,6 +23,8 @@ use Cake\Database\Connection;
  */
 class PostgresTableSniffer extends BaseTableSniffer
 {
+    use PostgresSnifferTrait;
+
     /**
      * @inheritDoc
      */
@@ -50,38 +53,6 @@ class PostgresTableSniffer extends BaseTableSniffer
                 $connection->execute(
                     'TRUNCATE "' . implode('", "', $tables) . '" RESTART IDENTITY CASCADE;'
                 );
-            });
-        });
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("            
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'            
-        ");
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function dropTables(array $tables)
-    {
-        if (empty($tables)) {
-            return;
-        }
-
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $connection->transactional(function(Connection $connection) use ($tables) {
-                foreach ($tables as $table) {
-                    $connection->execute(
-                        'DROP TABLE IF EXISTS "' . $table  . '" CASCADE;'
-                    );
-                }
             });
         });
     }

@@ -61,13 +61,17 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function startTest(Test $test)
     {
+        $this->statisticTool->startsTestTime();
+
         // Truncation can be skipped if no DB interaction are expected
         if (!$this->skipTablesTruncation($test)) {
             $this->_fixtureManager->truncateDirtyTables();
         }
 
+        $this->statisticTool->startsLoadingFixturesTime();
         // Load CakePHP fixtures
         parent::startTest($test);
+        $this->statisticTool->stopsLoadingFixturesTime();
 
         // Run the seeds of your DB
 //        $this->rollbackAndMigrateIfRequired();
@@ -82,7 +86,8 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTest(Test $test, $time)
     {
-        $this->statisticTool->collectTestStatistics($test, $time);
+        $this->statisticTool->stopsTestTime();
+        $this->statisticTool->collectTestStatistics($test);
     }
 
     /**

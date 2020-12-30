@@ -19,6 +19,8 @@ use Cake\Datasource\ConnectionManager;
 use Cake\Log\Log;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
+use Migrations\Migrations;
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
@@ -184,5 +186,25 @@ Security::setSalt('a-long-but-not-random-value');
 
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
-$migrations = new \Migrations\Migrations(['connection' => 'test']);
+
+// Prepare the DB
+SnifferRegistry::clear();
+
+if (getenv('SNIFFERS_IN_MAIN_MODE') && SnifferRegistry::get('test')->implementsTriggers()) {
+    SnifferRegistry::get('test')->activateMainMode();
+}
+
+SnifferRegistry::get('test')->dropTriggers();
+
+if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
+    SnifferRegistry::get('test')->dropTables(
+        SnifferRegistry::get('test')->getAllTables(true)
+    );
+}
+
+// Run migrations
+$migrations = new Migrations();
 $migrations->migrate();
+
+// Clear the Sniffers, ready to start the tests
+SnifferRegistry::clear();
