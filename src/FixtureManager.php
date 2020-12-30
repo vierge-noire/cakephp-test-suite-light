@@ -18,10 +18,7 @@ use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
 use Cake\TestSuite\TestCase;
-use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
-use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
-use CakephpTestSuiteLight\Sniffer\SqliteTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Exception;
 use function strpos;
 
@@ -83,65 +80,13 @@ class FixtureManager extends BaseFixtureManager
     }
 
     /**
-     * Each connection has it's own sniffer
-     *
-     * @param string $connectionName
-     * @return BaseTableSniffer
-     */
-    public function getSniffer(string $connectionName): BaseTableSniffer
-    {
-        return $this->sniffers[$connectionName] ?? $this->addSniffer($connectionName);
-    }
-
-    /**
-     * @param string $connectionName
-     * @return BaseTableSniffer
-     */
-    public function addSniffer(string $connectionName): BaseTableSniffer
-    {
-        $snifferName = $this->getConnectionSnifferName($connectionName);
-
-        /** @var BaseTableSniffer $sniffer */
-        $sniffer = new $snifferName($this->getConnection($connectionName));
-        return $this->sniffers[$connectionName] = $sniffer;
-    }
-
-    /**
-     * Read in the config the sniffer to use
-     * @param string $connectionName
-     * @return string
-     */
-    public function getConnectionSnifferName(string $connectionName): string
-    {
-        $config = ConnectionManager::getConfig($connectionName);
-        $driver = '';
-
-        if (isset($config['tableSniffer'])) {
-            $snifferName = $config['tableSniffer'];
-        } else {
-            try {
-                $driver = $this->getConnection($connectionName)->config()['driver'];
-                $snifferName = $this->getDefaultTableSniffers()[$driver] ?? null;
-                if (is_null($snifferName)) {
-                    throw new \RuntimeException();
-                }
-            } catch (\RuntimeException $e) {
-                $msg = "Testsuite light error for connection {$connectionName}. ";
-                $msg .= "The DB driver {$driver} is not supported or was not found";
-                throw new \PHPUnit\Framework\Exception($msg);
-            }
-        }
-        return $snifferName;
-    }
-
-    /**
      * Scan all test connections and truncate the dirty tables
      * @return void
      */
     public function truncateDirtyTables(): void
     {
         foreach ($this->getActiveConnections() as $connection) {
-            $this->getSniffer($connection)->truncateDirtyTables();
+            SnifferRegistry::get($connection)->truncateDirtyTables();
         }
     }
 
@@ -199,27 +144,14 @@ class FixtureManager extends BaseFixtureManager
     }
 
     /**
-     * Table sniffers provided by the package
-     * @return array
-     */
-    public function getDefaultTableSniffers(): array
-    {
-        return [
-            \Cake\Database\Driver\Mysql::class => MysqlTriggerBasedTableSniffer::class,
-            \Cake\Database\Driver\Sqlite::class => SqliteTriggerBasedTableSniffer::class,
-            \Cake\Database\Driver\Postgres::class => PostgresTriggerBasedTableSniffer::class,
-        ];
-    }
-
-    /**
-     * Get the appropriate truncator and drop all tables
+     * Get the appropriate sniffer and drop all tables
      * @param string $connectionName
      * @return void
      */
     public function dropTables(string $connectionName): void
     {
-        $this->getSniffer($connectionName)->dropTables(
-            $this->getSniffer($connectionName)->fetchAllTables()
+        SnifferRegistry::get($connectionName)->dropTables(
+            SnifferRegistry::get($connectionName)->fetchAllTables()
         );
     }
 

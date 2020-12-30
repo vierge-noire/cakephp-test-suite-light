@@ -5,19 +5,22 @@ DRIVER=$1;
 echo "Starting PHPUNIT tests"
 export DB_DRIVER=$DRIVER
 
-# Test Cases where tables get dropped are put separately,
-# since they are giving a hard time to the fixtures
-# These can be put all together again once the migrations
-# get required in the dependencies
-./vendor/bin/phpunit --testsuite Default --stop-on-fail
-./vendor/bin/phpunit --testsuite DropCities --stop-on-fail
-./vendor/bin/phpunit --testsuite DropCountries --stop-on-fail
-./vendor/bin/phpunit --testsuite DropTables --stop-on-fail
+#######################
+#### Tests with temporary sniffers
+#######################
+./vendor/bin/phpunit
 
-# Run the tests again using non-triggered based sniffers
+#######################
+#### Tests with non temporary sniffers
+#######################
+export SNIFFERS_IN_MAIN_MODE="true"
+./vendor/bin/phpunit
+
+#### DEPRECATED #####
+# Run the tests using
+# non-triggered based sniffers
+#####################
 export TABLE_SNIFFER="CakephpTestSuiteLight\Sniffer\\${DRIVER}TableSniffer"
+export USE_NON_TRIGGERED_BASED_SNIFFERS="true"
+./vendor/bin/phpunit
 
-./vendor/bin/phpunit --testsuite Default --stop-on-fail
-./vendor/bin/phpunit --testsuite DropCities --stop-on-fail
-./vendor/bin/phpunit --testsuite DropCountries --stop-on-fail
-./vendor/bin/phpunit --testsuite DropTables --stop-on-fail

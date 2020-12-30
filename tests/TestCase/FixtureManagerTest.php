@@ -15,16 +15,10 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 
 use Cake\Core\Configure;
-use Cake\Database\Driver\Mysql;
-use Cake\Database\Driver\Postgres;
-use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
-use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
-use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
-use CakephpTestSuiteLight\Sniffer\SqliteTriggerBasedTableSniffer;
 use TestApp\Model\Table\CountriesTable;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
@@ -97,50 +91,12 @@ class FixtureManagerTest extends TestCase
         );
     }
 
-    public function dataProviderTestLoadDefaultSniffer()
-    {
-        return [
-            [Mysql::class, MysqlTriggerBasedTableSniffer::class],
-            [Sqlite::class, SqliteTriggerBasedTableSniffer::class],
-            [Postgres::class, PostgresTriggerBasedTableSniffer::class],
-        ];
-    }
-
-    /**
-     * @param $driver
-     * @param $sniffer
-     * @dataProvider dataProviderTestLoadDefaultSniffer
-     */
-    public function testGetDefaultTableSniffers($driver, $sniffer)
-    {
-        $act = $this->FixtureManager->getDefaultTableSniffers()[$driver];
-        $this->assertEquals($sniffer, $act);
-    }
-
     public function testLoadSnifferFromConfigFile()
     {
         $expected = '\testTableSniffer';
         $this->FixtureManager->loadConfig();
         $conf = Configure::readOrFail('TestSuiteLightSniffers.\testDriver');
         $this->assertEquals($expected, $conf);
-    }
-
-    public function testGetConnectionSnifferNameOnNonExistingConnection()
-    {
-        $this->expectException(\PHPUnit\Framework\Exception::class);
-        $this->FixtureManager->getConnectionSnifferName('dummy');
-    }
-
-    public function testGetConnectionSnifferNameOnConnection()
-    {
-        $sniffer = 'FooSniffer';
-        $connectionName = 'testGetConnectionSnifferNameOnConnection';
-        $testConfig = ConnectionManager::getConfig('test');
-        $testConfig['tableSniffer'] = $sniffer;
-        ConnectionManager::setConfig($connectionName, $testConfig);
-        $act = $this->FixtureManager->getConnectionSnifferName($connectionName);
-        $this->assertSame($sniffer, $act);
-        ConnectionManager::drop($connectionName);
     }
 
     public function testFetchActiveConnections()

@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight;
 
 use Cake\Datasource\ConnectionManager;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use PHPUnit\Framework\Test;
 
@@ -79,7 +80,7 @@ class StatisticTool
     public function collectDirtyTables(): void
     {
         foreach ($this->getFixtureManager()->getActiveConnections() as $connectionName) {
-            $this->dirtyTables[$connectionName] = $this->getFixtureManager()->getSniffer($connectionName)->getDirtyTables();
+            $this->dirtyTables[$connectionName] = SnifferRegistry::get($connectionName)->getDirtyTables();
         }
     }
 
@@ -110,7 +111,7 @@ class StatisticTool
         $this->statistics[] = [
             round($time * 1000) / 1000,             // Time in seconds
             get_class($test),                           // Test Class name
-            $testName,                           // Test method name
+            $testName,                                  // Test method name
             count($dirtyTables),                        // Number of dirty tables
             implode(', ', $dirtyTables),           // Dirty tables
         ];
@@ -136,7 +137,7 @@ class StatisticTool
         foreach ($this->getDirtyTables() as $connection => $dirtyTables) {
             $db = ConnectionManager::get($connection)->config()['database'];
             foreach ($dirtyTables as $i => $dirtyTable) {
-                if ($dirtyTable !== TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR) {
+                if (strpos($dirtyTable, TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR) === false) {
                     $dirtyTables[$i] = "$db.$dirtyTable";
                 } else {
                     unset($dirtyTables[$i]);

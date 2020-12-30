@@ -39,4 +39,4 @@ jobs:
         run: composer update --prefer-dist --no-progress --no-suggest --prefer-stable
 
       - name: Run phpstan
-        run: composer run-phpstan
+        run: composer phpstan

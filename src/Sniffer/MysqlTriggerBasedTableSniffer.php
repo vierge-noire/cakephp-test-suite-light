@@ -14,57 +14,24 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Sniffer;
 
 
-use Cake\Database\Connection;
+use CakephpTestSuiteLight\Sniffer\DriverTraits\MysqlSnifferTrait;
 
 class MysqlTriggerBasedTableSniffer extends BaseTableSniffer implements TriggerBasedTableSnifferInterface
 {
+    use MysqlSnifferTrait;
+
     /**
      * @inheritDoc
      */
     public function truncateDirtyTables(): void
     {
-        $this->getConnection()->execute('CALL TruncateDirtyTables();');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("
-            SELECT table_name
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = DATABASE();
-        ");
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function dropTables(array $tables): void
-    {
-        $this->removeDirtyTableCollectorFromArray($tables);
-
-        if (empty($tables)) {
-            return;
+        try {
+            $this->getConnection()->execute('CALL TruncateDirtyTables();');
+        } catch (\Exception $e) {
+            // The dirty table collector might not be found because the session
+            // was interrupted.
+            $this->restart();
         }
-
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $connection->transactional(function(Connection $connection) use ($tables) {
-                $connection->execute(
-                    $this->implodeSpecial(
-                        'DROP TABLE IF EXISTS `',
-                        $tables,
-                        '`;'
-                    )
-                );
-                // Truncate dirty table collector
-                $connection
-                    ->newQuery()
-                    ->delete(self::DIRTY_TABLE_COLLECTOR)
-                    ->execute();
-            });
-        });
     }
 
     /**
@@ -83,7 +50,7 @@ class MysqlTriggerBasedTableSniffer extends BaseTableSniffer implements TriggerB
             if ($table === $dirtyTable) {
                 continue;
             }
-            $stmts .= "            
+            $stmts .= "       
             CREATE TRIGGER {$triggerPrefix}{$table} AFTER INSERT ON `{$table}`
             FOR EACH ROW                
                 INSERT IGNORE INTO {$dirtyTable} (table_name) VALUES ('{$table}'), ('{$dirtyTable}');                
@@ -98,31 +65,42 @@ class MysqlTriggerBasedTableSniffer extends BaseTableSniffer implements TriggerB
     /**
      * @inheritDoc
      */
-    public function setup(): void
+    public function start(): void
     {
-        parent::setup();
+        parent::start();
 
         // create dirty tables collector
         $this->createDirtyTableCollector();
-
-        // create triggers
         $this->createTriggers();
+        $this->createTruncateDirtyTablesProcedure();
+        $this->cleanAllTables();
+    }
 
+    /**
+     * @inheritDoc
+     */
+    public function shutdown(): void
+    {
+        parent::shutdown();
+
+        $this->dropTriggers();
+        $this->dropDirtyTableCollector();
+    }
+
+    /**
+     * @return void
+     */
+    public function createTruncateDirtyTablesProcedure(): void
+    {
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-        // Collect all statements and run them in one transaction
-        $stmts = [];
-
-        // create truncate procedure
-        $createTruncateProcedureStmt = "
+        $this->getConnection()->execute("
             DROP PROCEDURE IF EXISTS TruncateDirtyTables;
             CREATE PROCEDURE TruncateDirtyTables()
             BEGIN
                 DECLARE current_table_name VARCHAR(128);
                 DECLARE finished INTEGER DEFAULT 0;
                 DECLARE dirty_table_cursor CURSOR FOR
-                    SELECT dt.table_name FROM {$dirtyTable} dt
-                    INNER JOIN information_schema.TABLES info_schema on dt.table_name = info_schema.TABLE_NAME
-                    WHERE info_schema.table_schema = DATABASE();                    
+                    SELECT dt.table_name FROM {$dirtyTable} dt;                    
                 DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished = 1;
             
                 SET FOREIGN_KEY_CHECKS=0;
@@ -141,50 +119,19 @@ class MysqlTriggerBasedTableSniffer extends BaseTableSniffer implements TriggerB
                             
                 SET FOREIGN_KEY_CHECKS=1;
             END
-        ";
-        $stmts[] = $createTruncateProcedureStmt;
-
-        // Run all statements in one transaction
-        $this->getConnection()->transactional(function(Connection $connection) use ($stmts) {
-            foreach ($stmts as $stmt) {
-                $connection->execute($stmt);
-            }
-        });
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getTriggers(): array
-    {
-        $triggers = $this->fetchQuery("
-            SHOW triggers
         ");
-
-        foreach ($triggers as $k => $trigger) {
-            if (strpos($trigger, self::TRIGGER_PREFIX) !== 0) {
-                unset($triggers[$k]);
-            }
-        }
-
-        return (array)$triggers;
     }
 
     /**
      * @inheritDoc
      */
-    public function dropTriggers(): void
+    public function markAllTablesAsDirty(): void
     {
-        $triggers = $this->getTriggers();
-        if (empty($triggers)) {
-            return;
-        }
+        $tables = $this->getAllTablesExceptPhinxlogs();
+        $dirtyTable = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        $tables[] = $dirtyTable;
 
-        $stmts = $this->implodeSpecial(
-            "DROP TRIGGER ",
-            $triggers,
-            ";"
-        );
-        $this->getConnection()->execute($stmts);
+        $stmt = "INSERT IGNORE INTO {$dirtyTable} VALUES ('" . implode("'), ('", $tables) . "')";
+        $this->getConnection()->execute($stmt);
     }
 }

@@ -16,6 +16,7 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 use Cake\Database\Connection;
 use Cake\Database\Exception;
+use CakephpTestSuiteLight\Sniffer\DriverTraits\SqliteSnifferTrait;
 
 /**
  * Class SqliteTableSniffer
@@ -23,6 +24,8 @@ use Cake\Database\Exception;
  */
 class SqliteTableSniffer extends BaseTableSniffer
 {
+    use SqliteSnifferTrait;
+
     /**
      * @inheritDoc
      */
@@ -61,34 +64,6 @@ class SqliteTableSniffer extends BaseTableSniffer
                         ->delete('sqlite_sequence')
                         ->where(['name' => $table])
                         ->execute();
-                }
-            });
-        });
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("
-             SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence';
-        ");
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function dropTables(array $tables): void
-    {
-        if (empty($tables)) {
-            return;
-        }
-
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $connection->transactional(function(Connection $connection) use ($tables) {
-                foreach ($tables as $table) {
-                    $connection->execute("DROP TABLE IF EXISTS $table;");
                 }
             });
         });
