@@ -31,7 +31,10 @@
         <listener class="CakephpTestSuiteLight\FixtureInjector">
             <arguments>
                 <object class="CakephpTestSuiteLight\FixtureManager" />
+<!--                Activates the Runtime Analyzer tool-->
                 <boolean>true</boolean>
+<!--                Activates the Static Fixture Analyzer-->
+<!--                <boolean>true</boolean>-->
             </arguments>
         </listener>
     </listeners>

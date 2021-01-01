@@ -13,6 +13,9 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight;
 
+use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\Analyzer\RuntimeAnalyzer;
+use CakephpTestSuiteLight\Analyzer\StaticFixtureAnalyzer;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestSuite;
 
@@ -30,14 +33,24 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     public $_fixtureManager;
 
     /**
-     * @var StatisticTool
+     * @var RuntimeAnalyzer
      */
-    public $statisticTool;
+    public $runtimeAnalyzer;
 
-    public function __construct(FixtureManager $manager, bool $withStatistics = false)
+    /**
+     * @var StaticFixtureAnalyzer
+     */
+    public $staticFixtureAnalyzer;
+
+    public function __construct(
+        FixtureManager $fixtureManager,
+        bool $withStatistics = false,
+        bool $withFixtureAnalyzer = false
+    )
     {
-        $this->_fixtureManager = $manager;
-        $this->statisticTool   = new StatisticTool($manager, $withStatistics);
+        $this->_fixtureManager          = $fixtureManager;
+        $this->runtimeAnalyzer          = new RuntimeAnalyzer($fixtureManager, $withStatistics);
+        $this->staticFixtureAnalyzer    = new StaticFixtureAnalyzer($fixtureManager, $withFixtureAnalyzer);
     }
 
     /**
@@ -61,20 +74,12 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function startTest(Test $test): void
     {
-        // Truncation can be skipped if no DB interaction are expected
-        if (!$this->skipTablesTruncation($test)) {
-            $this->_fixtureManager->truncateDirtyTables();
-        }
-
-        // Load CakePHP fixtures
-        parent::startTest($test);
-
-        // Run the seeds of your DB
-//        $this->rollbackAndMigrateIfRequired();
+        $this->truncateDirtyTables($test);
+        $this->loadStaticFixtures($test);
     }
 
     /**
-     * Collect the
+     * Collect data for the statistic tool
      *
      * @param \PHPUnit\Framework\Test $test The test case
      * @param float                   $time current time
@@ -82,7 +87,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTest(Test $test, float $time): void
     {
-        $this->statisticTool->collectTestStatistics($test, $time);
+        $this->runtimeAnalyzer->collectTestStatistics($test, $time);
     }
 
     /**
@@ -94,7 +99,8 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTestSuite(TestSuite $suite): void
     {
-        $this->statisticTool->storeTestSuiteStatistics();
+        $this->runtimeAnalyzer->storeResultsInCsv();
+        $this->staticFixtureAnalyzer->storeResultsInCsv();
     }
 
     /**
@@ -109,27 +115,35 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     }
 
     /**
-     * Rollback the migrations defined in the config, and run them again
-     * This can be useful if certain seed needs to be performed by migration
-     * and should be recreated before each test
-     *
-     * @todo  TODO: the package aims at avoiding migrations
-     * in its dependency. Let's think about a way to have this
-     * done.
+     * @return FixtureManager
      */
-//    public function rollbackAndMigrateIfRequired()
-//    {
-//        $configs = Configure::read('TestFixtureMarkedNonMigrated', []);
-//
-//        if (!empty($configs)) {
-//            if (!isset($configs[0])) {
-//                $configs = [$configs];
-//            }
-//            $migrations = new Migrations();
-//            foreach ($configs as $config) {
-//                $migrations->rollback($config);
-//                $migrations->migrate($config);
-//            }
-//        }
-//    }
+    public function getFixtureManager(): FixtureManager
+    {
+        return $this->_fixtureManager;
+    }
+
+    /**
+     * @param Test $test
+     */
+    public function truncateDirtyTables(Test $test): void
+    {
+        // Truncation can be skipped if no DB interaction are expected
+        if (!$this->skipTablesTruncation($test)) {
+            $this->getFixtureManager()->truncateDirtyTables();
+        }
+    }
+
+    /**
+     * @param Test $test
+     * @return void
+     */
+    public function loadStaticFixtures(Test $test): void
+    {
+        if (!$this->staticFixtureAnalyzer->handleTest($test)) {
+            if ($test instanceof TestCase) {
+                $this->getFixtureManager()->setFixtures($test->getFixtures());
+            }
+            parent::startTest($test);
+        }
+    }
 }

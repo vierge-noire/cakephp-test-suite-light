@@ -12,21 +12,21 @@ declare(strict_types=1);
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace TestCase;
+namespace CakephpTestSuiteLight\Test\TestCase\Analyzer;
 
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\Analyzer\RuntimeAnalyzer;
 use CakephpTestSuiteLight\FixtureManager;
-use CakephpTestSuiteLight\StatisticTool;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
 
-class StatisticToolTest extends TestCase
+class RuntimeAnalyzerTest extends TestCase
 {
     /**
-     * @var StatisticTool
+     * @var RuntimeAnalyzer
      */
-    public $StatisticTool;
+    public $analyzer;
 
     public $fixtures = [
         // The order here is important
@@ -38,7 +38,7 @@ class StatisticToolTest extends TestCase
 
     public function setUp(): void
     {
-        $this->StatisticTool = new StatisticTool(
+        $this->analyzer = new RuntimeAnalyzer(
             new FixtureManager(),
             true
         );
@@ -46,7 +46,7 @@ class StatisticToolTest extends TestCase
 
     public function tearDown(): void
     {
-        unset($this->StatisticTool);
+        unset($this->analyzer);
     }
 
     /**
@@ -60,11 +60,11 @@ class StatisticToolTest extends TestCase
         // Arrange
         $this->loadFixtures();
         $time = 0.1239999;
-        $this->StatisticTool->collectTestStatistics($this, $time);
+        $this->analyzer->collectTestStatistics($this, $time);
         $db = ConnectionManager::get('test')->config()['database'];
 
         // Act
-        $stats = $this->StatisticTool->getStatistics();
+        $stats = $this->analyzer->getResults();
 
         // Assert
         $this->assertSame(1, count($stats));
@@ -74,13 +74,12 @@ class StatisticToolTest extends TestCase
         $this->assertSame(self::class, $stats[1]);
         $this->assertSame(__FUNCTION__, $stats[2]);
         $this->assertSame(2, $stats[3]);
-        $this->assertSame("$db.cities, $db.countries", $stats[4]);
+        $this->assertSame(["$db.cities", "$db.countries"], $stats[4]);
     }
 
     public function testWriteStatsInCsv()
     {
-        $this->StatisticTool->writeStatsInCsv();
-
-        $this->assertFileExists(TMP . 'test_suite_light' . DS . 'test_suite_statistics.csv');
+        $this->analyzer->storeResultsInCsv();
+        $this->assertFileExists(TMP . 'test_suite_light' . DS . 'RuntimeAnalyzer.csv');
     }
 }
