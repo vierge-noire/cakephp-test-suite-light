@@ -33,17 +33,22 @@ class FixtureManager extends BaseFixtureManager
     /**
      * @var bool
      */
-    private static $_configIsLoaded = false;
+    protected static $_configIsLoaded = false;
 
     /**
      * @var array
      */
-    private $sniffers = [];
+    protected $sniffers = [];
 
     /**
      * @var array|null
      */
-    private $activeConnections;
+    protected $activeConnections;
+
+    /**
+     * @var array
+     */
+    protected $fixtures = [];
 
     /**
      * FixtureManager constructor.
@@ -263,7 +268,7 @@ class FixtureManager extends BaseFixtureManager
             return;
         }
 
-        $fixtures = $test->fixtures;
+        $fixtures = $this->fixtures;
         if (!$fixtures || !$test->autoFixtures) {
             return;
         }
@@ -330,5 +335,30 @@ class FixtureManager extends BaseFixtureManager
                 throw new Exception($msg, 0, $e);
             }
         });
+    }
+
+    /**
+     * @return array
+     */
+    public function getFixtures(): array
+    {
+        return $this->fixtures;
+    }
+
+    /**
+     * @param array $fixtures
+     * @return void
+     */
+    public function setFixtures(array $fixtures)
+    {
+        $this->fixtures = $fixtures;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function dropFixture()
+    {
+        return array_pop($this->fixtures);
     }
 }

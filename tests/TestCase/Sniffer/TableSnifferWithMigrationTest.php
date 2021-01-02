@@ -37,7 +37,7 @@ class TableSnifferWithMigrationTest extends TestCase
     public $TableSniffer;
 
 
-    public function setUp(): void
+    public function setUp()
     {
         $fixtureManager = new FixtureManager();
         $this->TableSniffer = $fixtureManager->getSniffer('test');
@@ -51,7 +51,7 @@ class TableSnifferWithMigrationTest extends TestCase
         $this->migrations->migrate($config);
     }
 
-    public function tearDown(): void
+    public function tearDown()
     {
         unset($this->TableSniffer);
 

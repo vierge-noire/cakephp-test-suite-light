@@ -12,65 +12,18 @@ declare(strict_types=1);
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace CakephpTestSuiteLight;
+namespace CakephpTestSuiteLight\Analyzer;
 
 use Cake\Datasource\ConnectionManager;
 use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use PHPUnit\Framework\Test;
 
-class StatisticTool
+class RuntimeAnalyzer extends BaseAnalyzer
 {
-    /**
-     * @var FixtureManager
-     */
-    private $fixtureManager;
-    /**
-     * @var array
-     */
-    private $statistics = [];
     /**
      * @var array
      */
     private $dirtyTables = [];
-
-    /**
-     * @var string
-     */
-    private $fileName;
-
-    /**
-     * @var bool
-     */
-    private $isActivated;
-
-    /**
-     * @var float
-     */
-    public $time;
-
-    /**
-     * StatisticTool constructor.
-     *
-     * @param FixtureManager $manager
-     * @param bool          $isActivated
-     */
-    public function __construct(
-        FixtureManager $manager,
-        $isActivated = false
-    )
-    {
-        $this->fixtureManager = $manager;
-        $this->isActivated = $isActivated;
-        $this->setFileName();
-    }
-
-    /**
-     * @return bool
-     */
-    public function isNotActivated(): bool
-    {
-        return $this->isActivated !== true;
-    }
 
     /**
      * Go through the manager connections and collect dirty tables
@@ -98,7 +51,7 @@ class StatisticTool
      */
     public function collectTestStatistics(Test $test, float $time)
     {
-        if ($this->isNotActivated()) {
+        if ($this->isNotActive()) {
             return;
         }
 
@@ -107,22 +60,13 @@ class StatisticTool
         $dirtyTables = $this->castDirtyTables();
         $testName = method_exists($test, 'getName') ? $test->getName() : 'Test name undefined';
 
-        $this->statistics[] = [
+        $this->results[] = [
             round($time * 1000) / 1000,             // Time in seconds
             get_class($test),                           // Test Class name
             $testName,                           // Test method name
             count($dirtyTables),                        // Number of dirty tables
-            implode(', ', $dirtyTables),           // Dirty tables
+            $dirtyTables,                         // Dirty tables
         ];
-    }
-
-    /**
-     * Write the collected data in a csv data
-     * @return void
-     */
-    public function storeTestSuiteStatistics()
-    {
-        $this->writeStatsInCsv();
     }
 
     /**
@@ -150,75 +94,14 @@ class StatisticTool
         return $tables;
     }
 
-    /**
-     * Write Stats in a CSV file
-     * @return void
-     */
-    public function writeStatsInCsv()
+    public function getHeader(): array
     {
-        if ($this->isNotActivated()) {
-            return;
-        }
-
-        $statFile = fopen($this->getFileName(), 'w');
-
-        if (!$statFile) {
-            return;
-        }
-
-        fputcsv($statFile, [
+        return [
             'Time (seconds)',
             'Test Class',
             'Test Method',
             '# Dirty Tables',
             'Dirty Tables',
-        ]);
-
-        foreach ($this->statistics as $stat) {
-            fputcsv($statFile, $stat);
-        }
-
-        fclose($statFile);
-    }
-
-    /**
-     * @return string
-     */
-    public function getFileName(): string
-    {
-        return $this->fileName;
-    }
-
-    /**
-     *
-     */
-    public function setFileName()
-    {
-        if ($this->isNotActivated()) {
-            return;
-        }
-
-        $dirName = TMP . 'test_suite_light';
-        if (!file_exists($dirName)) {
-            mkdir($dirName, 0777, true);
-        }
-
-        $this->fileName = $dirName . DS . 'test_suite_statistics.csv';
-    }
-
-    /**
-     * @return array
-     */
-    public function getStatistics(): array
-    {
-        return $this->statistics;
-    }
-
-    /**
-     * @return FixtureManager
-     */
-    public function getFixtureManager(): FixtureManager
-    {
-        return $this->fixtureManager;
+        ];
     }
 }
