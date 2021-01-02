@@ -141,7 +141,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     {
         if (!$this->staticFixtureAnalyzer->handleTest($test)) {
             if ($test instanceof TestCase) {
-                $this->getFixtureManager()->setFixtures($test->getFixtures());
+                $this->getFixtureManager()->setFixtures((array)$test->fixtures);
             }
             parent::startTest($test);
         }
