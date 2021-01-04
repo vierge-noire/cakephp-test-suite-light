@@ -190,13 +190,13 @@ Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 // Prepare the DB
 SnifferRegistry::clear();
 
-if (getenv('SNIFFERS_IN_MAIN_MODE')) {
+if (getenv('SNIFFERS_IN_MAIN_MODE') && SnifferRegistry::get('test')->implementsTriggers()) {
     SnifferRegistry::get('test')->activateMainMode();
 }
 
 SnifferRegistry::get('test')->dropTriggers();
 
-if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS')) {
+if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
     SnifferRegistry::get('test')->dropTables(
         SnifferRegistry::get('test')->getAllTables(true)
     );
@@ -204,7 +204,7 @@ if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS')) {
 
 // Run migrations
 $migrations = new Migrations();
-$migrations->migrate(['connection' => 'test']);
+$migrations->migrate();
 
 // Clear the Sniffers, ready to start the tests
 SnifferRegistry::clear();

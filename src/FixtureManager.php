@@ -34,11 +34,6 @@ class FixtureManager extends BaseFixtureManager
     private static $_configIsLoaded = false;
 
     /**
-     * @var array
-     */
-    private $sniffers = [];
-
-    /**
      * @var array|null
      */
     private $activeConnections;

@@ -20,8 +20,8 @@ use Cake\Datasource\EntityInterface;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use CakephpTestSuiteLight\Test\TestUtil;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
@@ -87,9 +87,9 @@ class TableSnifferWithFixturesTest extends TestCase
         ];
         if ($this->TableSniffer->implementsTriggers()) {
             if ($this->driverIs('Sqlite') && $this->TableSniffer->isInTempMode()) {
-                $expected[] = 'temp.' . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+                $expected[] = 'temp.' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
             } else {
-                $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+                $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
             }
         }
 
@@ -109,8 +109,8 @@ class TableSnifferWithFixturesTest extends TestCase
             'countries',
             'phinxlog',
         ];
-        if ($this->TableSniffer->isInMainMode()) {
-            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
+            $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }
 
         $this->assertArraysHaveSameContent($expected, $found);
@@ -124,8 +124,8 @@ class TableSnifferWithFixturesTest extends TestCase
             'countries',
         ];
 
-        if ($this->TableSniffer->isInMainMode(true)) {
-            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
+            $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }
 
         $this->assertArraysHaveSameContent($expected, $found);

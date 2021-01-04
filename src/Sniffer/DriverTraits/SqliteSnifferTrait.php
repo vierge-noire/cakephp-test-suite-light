@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 
 use Cake\Database\Connection;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 
 trait SqliteSnifferTrait
 {
@@ -23,7 +23,7 @@ trait SqliteSnifferTrait
      */
     public function getTriggers(): array
     {
-        $triggerPrefix = TriggerBasedTableSnifferInterface::TRIGGER_PREFIX;
+        $triggerPrefix = BaseTriggerBasedTableSniffer::TRIGGER_PREFIX;
 
         $triggers = $this->fetchQuery("
             SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE '{$triggerPrefix}%'
@@ -76,7 +76,7 @@ trait SqliteSnifferTrait
         }
 
         $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $tables[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+            $tables[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
             $connection->transactional(function(Connection $connection) use ($tables) {
                 foreach ($tables as $table) {
                     $connection->execute("DROP TABLE IF EXISTS $table;");

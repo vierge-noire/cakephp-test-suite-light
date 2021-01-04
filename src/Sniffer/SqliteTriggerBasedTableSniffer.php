@@ -17,7 +17,7 @@ namespace CakephpTestSuiteLight\Sniffer;
 use Cake\Database\Connection;
 use CakephpTestSuiteLight\Sniffer\DriverTraits\SqliteSnifferTrait;
 
-class SqliteTriggerBasedTableSniffer extends BaseTableSniffer implements TriggerBasedTableSnifferInterface
+class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
 {
     use SqliteSnifferTrait;
 
@@ -121,7 +121,7 @@ class SqliteTriggerBasedTableSniffer extends BaseTableSniffer implements Trigger
     public function markAllTablesAsDirty(): void
     {
         $tables = $this->getAllTablesExceptPhinxlogs();
-        $dirtyTable = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $tables[] = $dirtyTable;
 
         $stmt = "INSERT OR IGNORE INTO {$dirtyTable} VALUES ('" . implode("'), ('", $tables) . "')";

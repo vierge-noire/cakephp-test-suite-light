@@ -16,9 +16,7 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
-use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use Migrations\Migrations;
 
@@ -36,14 +34,24 @@ class TableSnifferWithMigrationTest extends TestCase
      */
     public $TableSniffer;
 
+    /**
+     * @var bool
+     */
+    public static $snifferWasInTempMod;
+
     public static function setUpBeforeClass(): void
     {
-        SnifferRegistry::get('test')->activateMainMode();
+        if (SnifferRegistry::get('test')->implementsTriggers() && SnifferRegistry::get('test')->isInTempMode()) {
+            SnifferRegistry::get('test')->activateMainMode();
+            self::$snifferWasInTempMod = true;
+        }
     }
 
     public static function tearDownAfterClass(): void
     {
-        SnifferRegistry::get('test')->activateTempMode();
+        if (SnifferRegistry::get('test')->implementsTriggers() &&  self::$snifferWasInTempMod) {
+            SnifferRegistry::get('test')->activateTempMode();
+        }
     }
 
     public function setUp(): void

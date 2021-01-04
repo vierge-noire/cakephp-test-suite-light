@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 
 use Cake\Database\Connection;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 
 trait PostgresSnifferTrait
 {
@@ -23,7 +23,7 @@ trait PostgresSnifferTrait
      */
     public function getTriggers(): array
     {
-        $triggerPrefix = TriggerBasedTableSnifferInterface::TRIGGER_PREFIX;
+        $triggerPrefix = BaseTriggerBasedTableSniffer::TRIGGER_PREFIX;
         $triggers = $this->fetchQuery("
             SELECT tgname
             FROM pg_trigger
@@ -50,7 +50,7 @@ trait PostgresSnifferTrait
         }
 
         foreach ($triggers as $trigger) {
-            $table = substr($trigger, strlen(TriggerBasedTableSnifferInterface::TRIGGER_PREFIX));
+            $table = substr($trigger, strlen(BaseTriggerBasedTableSniffer::TRIGGER_PREFIX));
             $this->getConnection()->execute("DROP TRIGGER {$trigger} ON {$table};");
         }
     }
@@ -77,7 +77,7 @@ trait PostgresSnifferTrait
         }
 
         $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
-            $tables[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+            $tables[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
             foreach ($tables as $table) {
                 $connection->execute(
                     'DROP TABLE IF EXISTS "' . $table  . '" CASCADE;'

@@ -15,7 +15,7 @@ namespace CakephpTestSuiteLight\Sniffer\DriverTraits;
 
 
 use Cake\Database\Connection;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 
 trait MysqlSnifferTrait
 {
@@ -27,7 +27,7 @@ trait MysqlSnifferTrait
         $triggers = $this->fetchQuery("SHOW triggers");
 
         foreach ($triggers as $k => $trigger) {
-            if (strpos($trigger, TriggerBasedTableSnifferInterface::TRIGGER_PREFIX) !== 0) {
+            if (strpos($trigger, BaseTriggerBasedTableSniffer::TRIGGER_PREFIX) !== 0) {
                 unset($triggers[$k]);
             }
         }

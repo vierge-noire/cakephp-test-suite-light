@@ -18,8 +18,8 @@ use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use CakephpTestSuiteLight\Sniffer\TriggerBasedTableSnifferInterface;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -129,9 +129,9 @@ class TableSnifferTest extends TestCase
             $this->loadFixtures('Countries');
             if ($this->TableSniffer->implementsTriggers()) {
                 if ($this->driverIs('Sqlite') && $this->TableSniffer->isInTempMode()) {
-                    $expected[] = 'temp.' . TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+                    $expected[] = 'temp.' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
                 } else {
-                    $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+                    $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
                 }
             }
         } else {
@@ -176,7 +176,7 @@ class TableSnifferTest extends TestCase
         } elseif ($this->driverIs('Postgres')) {
             $found = $this->TableSniffer->fetchQuery('SELECT tgname FROM pg_trigger');
         } elseif ($this->driverIs('Sqlite')) {
-            if ($this->TableSniffer->isInTempMode()) {
+            if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInTempMode()) {
                 $found = $this->TableSniffer->fetchQuery('SELECT name FROM sqlite_temp_master WHERE type = "trigger"');
             } else {
                 $found = $this->TableSniffer->fetchQuery('SELECT name FROM sqlite_master WHERE type = "trigger"');
@@ -196,8 +196,8 @@ class TableSnifferTest extends TestCase
             'cities',
             'countries',
         ];
-        if ($this->TableSniffer->isInMainMode()) {
-            $expected[] = TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR;
+        if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
+            $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }
 
         $this->assertArraysHaveSameContent($expected, $found);
@@ -216,7 +216,7 @@ class TableSnifferTest extends TestCase
         $this->assertArraysHaveSameContent([
             'cities',
             'countries',
-            TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR,
+            BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR,
         ], $dirtyTables);
     }
 
@@ -263,10 +263,10 @@ class TableSnifferTest extends TestCase
 
         foreach ([1, 2, 3] as $i) {
             $this->TableSniffer->activateTempMode();
-            $this->assertSame(false, in_array(TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR, $this->TableSniffer->getAllTables(true)));
+            $this->assertSame(false, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $this->TableSniffer->getAllTables(true)));
 
             $this->TableSniffer->activateMainMode();
-            $this->assertSame(true, in_array(TriggerBasedTableSnifferInterface::DIRTY_TABLE_COLLECTOR, $this->TableSniffer->getAllTables(true)));
+            $this->assertSame(true, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $this->TableSniffer->getAllTables(true)));
         }
 
         $this->TableSniffer->setMode($mode);
