@@ -45,9 +45,7 @@ class FixtureManager extends BaseFixtureManager
      */
     public function __construct()
     {
-        $this
-            ->initDb()
-            ->loadConfig();
+        $this->loadConfig();
     }
 
     /**
@@ -57,12 +55,6 @@ class FixtureManager extends BaseFixtureManager
     public function getConnection($name = 'test')
     {
         return ConnectionManager::get($name);
-    }
-
-    public function initDb(): FixtureManager
-    {
-        $this->_initDb();
-        return $this;
     }
 
     /**
