@@ -58,6 +58,10 @@ define('CONFIG', TEST_APP . 'config' . DS);
 
 require_once CORE_PATH . 'config/bootstrap.php';
 
+# For testing purpose, initiate the FixtureManager first
+# This is not required.
+new \CakephpTestSuiteLight\FixtureManager();
+
 date_default_timezone_set('UTC');
 mb_internal_encoding('UTF-8');
 
