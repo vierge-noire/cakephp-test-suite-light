@@ -13,7 +13,7 @@ export DB_DRIVER=$DRIVER
 #######################
 #### Tests with non temporary sniffers
 #######################
-export SNIFFERS_IN_MAIN_MODE="true"
+export SNIFFERS_IN_TEMP_MODE="true"
 ./vendor/bin/phpunit
 
 #### DEPRECATED #####
