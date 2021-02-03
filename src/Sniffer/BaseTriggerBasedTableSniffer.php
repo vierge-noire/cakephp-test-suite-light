@@ -26,9 +26,17 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
 
     const TRIGGER_PREFIX = 'dirty_table_spy_';
 
-    const MAIN_MODE = 'MAIN_MODE';
+    const MODE_KEY = 'dirtyTableCollectorMode';
 
-    const TEMP_MODE = 'TEMP_MODE';
+    /**
+     * The dirty table collector is a permanent table
+     */
+    const PERM_MODE = 'PERM';
+
+    /**
+     * The dirty table collector is a temporary table
+     */
+    const TEMP_MODE = 'TEMP';
 
     /**
      * @var string
@@ -65,24 +73,8 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      */
     public function __construct(ConnectionInterface $connection)
     {
-        $this->mode = self::TEMP_MODE;
+        $this->mode = $this->getDefaultMode($connection);
         parent::__construct($connection);
-    }
-
-    /**
-     * @return ConnectionInterface
-     */
-    public function getConnection(): ConnectionInterface
-    {
-        return $this->connection;
-    }
-
-    /**
-     * @param ConnectionInterface $connection
-     */
-    public function setConnection(ConnectionInterface $connection): void
-    {
-        $this->connection = $connection;
     }
 
     /**
@@ -134,7 +126,9 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      */
     public function cleanAllTables(): void
     {
-        $this->markAllTablesAsDirty();
+        if ($this->isInTempMode()) {
+            $this->markAllTablesAsDirty();
+        }
         $this->truncateDirtyTables();
     }
 
@@ -144,7 +138,7 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      */
     public function activateMainMode(): void
     {
-        $this->setMode(self::MAIN_MODE);
+        $this->setMode(self::PERM_MODE);
     }
 
     /**
@@ -172,7 +166,8 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     /**
      * Get the mode on which the sniffer is running
      * This defines if the collector table is
-     * temporary or not
+     * temporary or not.
+     *
      * @return string
      */
     public function getMode(): string
@@ -181,6 +176,24 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
             return '';
         }
         return $this->mode;
+    }
+
+    /**
+     * Defines the default mode for the dirty table collector.
+     *
+     * @param ConnectionInterface $connection
+     * @return string
+     * @throws \Exception
+     */
+    public function getDefaultMode(ConnectionInterface $connection): string
+    {
+        $mode = $connection->config()[self::MODE_KEY] ?? self::PERM_MODE;
+        if (!in_array($mode, [self::TEMP_MODE, self::PERM_MODE])) {
+            $msg = self::MODE_KEY . ' can only be equal to ' . self::PERM_MODE . ' or ' . self::TEMP_MODE;
+            throw new \Exception($msg);
+        }
+
+        return $mode;
     }
 
     /**
@@ -196,6 +209,6 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      */
     public function isInMainMode(): bool
     {
-        return ($this->getMode() === self::MAIN_MODE);
+        return ($this->getMode() === self::PERM_MODE);
     }
 }
