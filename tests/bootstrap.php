@@ -19,6 +19,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\Log\Log;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Migrations\Migrations;
 
@@ -149,6 +150,10 @@ if (getenv('TABLE_SNIFFER')) {
     $dbConnection['tableSniffer'] = getenv('TABLE_SNIFFER');
 }
 
+if (getenv('SNIFFERS_IN_TEMP_MODE')) {
+    $dbConnection[BaseTriggerBasedTableSniffer::MODE_KEY] = BaseTriggerBasedTableSniffer::TEMP_MODE;
+}
+
 ConnectionManager::setConfig('default', $dbConnection);
 ConnectionManager::setConfig('test', $dbConnection);
 
@@ -158,6 +163,9 @@ $dummyConnection['driver'] = 'Foo';
 $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
+if (getenv('SNIFFERS_IN_TEMP_MODE')) {
+    ConnectionManager::get('test')->execute('DROP TABLE IF EXISTS ' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR);
+}
 
 Configure::write('Session', [
     'defaults' => 'php',
@@ -191,16 +199,6 @@ Security::setSalt('a-long-but-not-random-value');
 
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
-
-// Prepare the DB
-SnifferRegistry::clear();
-
-if (getenv('SNIFFERS_IN_MAIN_MODE') && SnifferRegistry::get('test')->implementsTriggers()) {
-    SnifferRegistry::get('test')->activateMainMode();
-}
-
-SnifferRegistry::get('test')->dropTriggers();
-
 if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
     SnifferRegistry::get('test')->dropTables(
         SnifferRegistry::get('test')->getAllTables(true)
@@ -210,6 +208,3 @@ if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')-
 // Run migrations
 $migrations = new Migrations();
 $migrations->migrate();
-
-// Clear the Sniffers, ready to start the tests
-SnifferRegistry::clear();
