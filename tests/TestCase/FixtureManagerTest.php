@@ -91,12 +91,9 @@ class FixtureManagerTest extends TestCase
         );
     }
 
-    public function testLoadSnifferFromConfigFile()
+    public function testSkipInTestSuiteLight()
     {
-        $expected = '\testTableSniffer';
-        $this->FixtureManager->loadConfig();
-        $conf = Configure::readOrFail('TestSuiteLightSniffers.\testDriver');
-        $this->assertEquals($expected, $conf);
+        $this->assertSame(true, ConnectionManager::getConfig('test_dummy')['skipInTestSuiteLight']);
     }
 
     public function testFetchActiveConnections()
