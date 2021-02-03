@@ -22,6 +22,10 @@ use Cake\Utility\Security;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Migrations\Migrations;
 
+# For testing purpose, initiate the FixtureManager first
+# This is not required.
+new \CakephpTestSuiteLight\FixtureManager();
+
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
 }
@@ -57,10 +61,6 @@ define('CONFIG', TEST_APP . 'config' . DS);
 // phpcs:enable
 
 require_once CORE_PATH . 'config/bootstrap.php';
-
-# For testing purpose, initiate the FixtureManager first
-# This is not required.
-new \CakephpTestSuiteLight\FixtureManager();
 
 date_default_timezone_set('UTC');
 mb_internal_encoding('UTF-8');
@@ -155,6 +155,7 @@ ConnectionManager::setConfig('test', $dbConnection);
 // This connection is meant to be ignored
 $dummyConnection = $dbConnection;
 $dummyConnection['driver'] = 'Foo';
+$dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 
