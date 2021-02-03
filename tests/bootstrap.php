@@ -22,10 +22,6 @@ use Cake\Utility\Security;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Migrations\Migrations;
 
-# For testing purpose, initiate the FixtureManager first
-# This is not required.
-new \CakephpTestSuiteLight\FixtureManager();
-
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
 }
