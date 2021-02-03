@@ -39,17 +39,6 @@ class FixtureManager extends BaseFixtureManager
     private $activeConnections;
 
     /**
-     * FixtureManager constructor.
-     * The config file test_suite_light is being loaded
-     * This config file is deprecated. Configure the suite
-     * at the connection level.
-     */
-    public function __construct()
-    {
-        $this->loadConfig();
-    }
-
-    /**
      * @param string $name
      * @return ConnectionInterface
      */
@@ -100,34 +89,6 @@ class FixtureManager extends BaseFixtureManager
         }
 
         return true;
-    }
-
-    /**
-     * Load the mapping between the database drivers
-     * and the table truncators.
-     * Add your own truncators for a driver not being covered by
-     * the package in your test_suite_light.php config file
-     * @deprecated The configuration file test_suite_light.php is deprecated
-     */
-    public function loadConfig(): FixtureManager
-    {
-        if (!self::$_configIsLoaded) {
-            try {
-                if (Configure::load('test_suite_light')) {
-                    throw new \PHPUnit\Framework\Exception(
-                        "The test_suite_light.php configuration file is deprecated.\n" .
-                        "See https://github.com/vierge-noire/cakephp-test-suite-light#cakephp-test-suite-light.\n"
-                    );
-                }
-            }
-            catch (\PHPUnit\Framework\Exception $exception) {
-                echo $exception->getMessage();
-            }
-            catch (Exception $exception) {}
-            self::$_configIsLoaded = true;
-        }
-
-        return $this;
     }
 
     /**
