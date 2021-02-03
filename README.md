@@ -63,7 +63,7 @@ by SQL queries. These are called `TableSniffers` and there are located in the `s
 * Postgres
 
 If you use a different database engine, you will have to provide your own. It should extend
-the `BaseTableSniffer`.
+the `BaseTableSniffer` class.
 
 You should then map in your `config/test_suite_light.php` file the driver to
 the custom table sniffer. E.g.:
@@ -84,6 +84,23 @@ return [
 You may wish to skip the truncation of tables between the tests. For example if you know in advance that
 your tests do not interact with the database, or if you do not mind having a dirty DB at the beginning of your tests.
 This is made at the test class level, by letting your test class using the trait `CakephpTestSuiteLight\SkipTablesTruncation`.
+
+### Temporary vs non-temporary dirty table collector
+
+The present plugin collects the dirty tables in a dedicated table with the help of triggers.
+This table is per default temporary in order to keep it invisible to the code.
+
+One of the advantage of the present test suite, consists in the fact that the test database is cleaned before each test,
+rather than after. This enables the developer to perform queries in the test database and observe the state in which
+a given test left the database.
+
+Due to the fact that triggers are created on all tables creating inserts in the temporary dirty table collector,
+the developer will not be able to perform any manual inserts in the test database outside the test suite.
+
+If needed, one solution consists in dropping the test database and re-running the migrations. A second solution
+consists in having the dirty table collector non-temporary. This is possible at the connection level, by
+calling in `tests/bootstrap.php` `CakephpTestSuiteLight\Sniffer\SnifferRegistry::get('your_test_connection_name')->activateMainMode();`
+with `your_test_connection_name` being typically `test`. 
 
 ### Using CakePHP fixtures
 
