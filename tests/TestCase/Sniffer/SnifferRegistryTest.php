@@ -19,6 +19,7 @@ use Cake\Database\Driver\Postgres;
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
@@ -63,5 +64,17 @@ class SnifferRegistryTest extends TestCase
         $act = SnifferRegistry::getConnectionSnifferName($connectionName);
         $this->assertSame($sniffer, $act);
         ConnectionManager::drop($connectionName);
+    }
+
+    public function testModeIsCorrect()
+    {
+        $tables = SnifferRegistry::get('test')->fetchQuery('SHOW TABLES;');
+        $collectorIsVisible = in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables);
+        if (getenv('SNIFFERS_IN_TEMP_MODE') || !SnifferRegistry::get('test')->implementsTriggers()) {
+            $expected = false;
+        } else {
+            $expected = true;
+        }
+        $this->assertSame($expected, $collectorIsVisible);
     }
 }
