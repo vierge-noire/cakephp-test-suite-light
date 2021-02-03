@@ -68,7 +68,7 @@ class SnifferRegistryTest extends TestCase
 
     public function testModeIsCorrect()
     {
-        $tables = SnifferRegistry::get('test')->fetchQuery('SHOW TABLES;');
+        $tables = SnifferRegistry::get('test')->fetchAllTables();
         $collectorIsVisible = in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables);
         if (getenv('SNIFFERS_IN_TEMP_MODE') || !SnifferRegistry::get('test')->implementsTriggers()) {
             $expected = false;
