@@ -155,6 +155,7 @@ ConnectionManager::setConfig('test', $dbConnection);
 // This connection is meant to be ignored
 $dummyConnection = $dbConnection;
 $dummyConnection['driver'] = 'Foo';
+$dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 
