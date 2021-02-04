@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Sniffer;
 
-
 use Cake\Database\Exception;
 use Cake\Datasource\ConnectionInterface;
 
@@ -129,7 +128,6 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
         if ($this->isInTempMode()) {
             $this->markAllTablesAsDirty();
         }
-        $this->truncateDirtyTables();
     }
 
     /**

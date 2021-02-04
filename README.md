@@ -228,7 +228,7 @@ a given test left the database.
 The present plugin collects the dirty tables in a dedicated table with the help of triggers.
 This table is per default permanent, but it can be set to temporary in order to keep it invisible to the code.
 
-In ordert to do so, in your test DB settings, set the key `dirtyTableCollectorMode` to `TEMP`.
+In ordert to do so, in your test DB settings, set the key `'dirtyTableCollectorMode'` to `'TEMP'`.
 
 ### Using CakePHP fixtures
 
