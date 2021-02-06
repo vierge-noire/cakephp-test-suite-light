@@ -60,7 +60,7 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * Truncates the tables that were used by the previous test before starting a new one
      * The truncation may be by-passed by setting in the test
      *
-     * @param \PHPUnit\Framework\Test $test The test case
+     * @param \Cake\TestSuite\TestCase $test The test case
      * @return void
      */
     public function startTest(Test $test): void

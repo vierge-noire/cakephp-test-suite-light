@@ -93,7 +93,8 @@ class TablesTruncation
 
     protected static function _extractConnectionNames(string $var): array
     {
-        $val = env($var);
+        /** @var string $val */
+        $val = env($var, '');
 
         if (empty($val)) {
             return [];
