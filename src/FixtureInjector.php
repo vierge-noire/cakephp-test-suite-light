@@ -41,7 +41,9 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     }
 
     /**
-     * Nothing to do there. The tables should be created
+     * Request sniffers initialization
+     *
+     * The tables should be created
      * in tests/bootstrap.php, either by migration or by running
      * the relevant Sql commands on the test DBs
      * See the Migrator tool provided here:
@@ -49,7 +51,9 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * @param TestSuite $suite
      */
     public function startTestSuite(TestSuite $suite): void
-    {}
+    {
+        $this->_fixtureManager->startSniffers();
+    }
 
     /**
      * Cleanup before test starts
@@ -63,12 +67,21 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     {
         $this->statisticTool->startsTestTime();
 
-        // Truncation can be skipped if no DB interaction are expected
-        if (!$this->skipTablesTruncation($test)) {
-            $this->_fixtureManager->truncateDirtyTables();
+        // Apply local overrides to truncation policies
+        $test->fixtureManager = $this->_fixtureManager; // needs this for skip and force traits
+        if (method_exists($test, 'preserveOriginalPolicies')) {
+            $test->preserveOriginalPolicies();
         }
 
+        if (method_exists($test, 'overrideTruncationPolicies')) {
+            $test->overrideTruncationPolicies($test);
+        }
+
+        // Apply truncation
+        $this->_fixtureManager->truncateDirtyTables();
+
         $this->statisticTool->startsLoadingFixturesTime();
+
         // Load CakePHP fixtures
         parent::startTest($test);
         $this->statisticTool->stopsLoadingFixturesTime();
@@ -86,6 +99,10 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      */
     public function endTest(Test $test, float $time): void
     {
+        if (method_exists($test, 'restoreOriginalPolicies')) {
+            $test->restoreOriginalPolicies();
+        }
+
         $this->statisticTool->stopsTestTime();
         $this->statisticTool->collectTestStatistics($test);
     }
@@ -100,17 +117,6 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
     public function endTestSuite(TestSuite $suite): void
     {
         $this->statisticTool->storeTestSuiteStatistics();
-    }
-
-    /**
-     * If a test uses the SkipTablesTruncation trait, table truncation
-     * does not occur between tests
-     * @param Test $test
-     * @return bool
-     */
-    public function skipTablesTruncation(Test $test): bool
-    {
-        return isset($test->skipTablesTruncation) ? $test->skipTablesTruncation : false;
     }
 
     /**

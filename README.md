@@ -1,14 +1,39 @@
 # cakephp-test-suite-light
 A fast test suite for CakePHP applications
 
-#### For CakePHP 3.x
-composer require --dev vierge-noire/cakephp-test-suite-light "^1.0"
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-#### For CakePHP 4.x
-composer require --dev vierge-noire/cakephp-test-suite-light "^2.0"
+- [Installation](#installation)
+	- [For CakePHP 3.x](#for-cakephp-3x)
+	- [For CakePHP 4.x](#for-cakephp-4x)
+	- [Basic setup](#basic-setup)
+- [In-depth configuration](#in-depth-configuration)
+	- [Ignoring connections](#ignoring-connections)
+	- [Configure sniffers used for dirty tables detection](#configure-sniffers-used-for-dirty-tables-detection)
+	- [Fine-tuning the truncation](#fine-tuning-the-truncation)
+		- [Permanently disable truncation for a whole run](#permanently-disable-truncation-for-a-whole-run)
+		- [Change global truncation policy](#change-global-truncation-policy)
+		- [Truncation policy per connection](#truncation-policy-per-connection)
+		- [Overriding truncation policies in a test case](#overriding-truncation-policies-in-a-test-case)
+		- [Using the tables truncation trait](#using-the-tables-truncation-trait)
+	- [Temporary vs non-temporary dirty table collector](#temporary-vs-non-temporary-dirty-table-collector)
+	- [Using CakePHP fixtures](#using-cakephp-fixtures)
+	- [Statistic tool](#statistic-tool)
+- [Authors](#authors)
+- [Support](#support)
+- [License](#license)
+
+<!-- /TOC -->
 
 ## Installation
 
+### For CakePHP 3.x
+composer require --dev vierge-noire/cakephp-test-suite-light "^1.0"
+
+### For CakePHP 4.x
+composer require --dev vierge-noire/cakephp-test-suite-light "^2.0"
+
+### Basic setup
 Make sure you *replace* the native CakePHP listener by the following one inside your `phpunit.xml` (or `phpunit.xml.dist`) config file, per default located in the root folder of your application:
 
 ```xml
@@ -61,6 +86,7 @@ provide the `skipInTestSuiteLight` key set to `true` in your `config/app.php`. E
     ],
     // [...]
 ]
+?>
 ```
 
 This can be useful for example if you have connections to a third party server in the cloud that should be ignored.
@@ -94,10 +120,11 @@ the custom table sniffer for each relevant connection. E.g.:
         // [...]
     ],
 ]
+?>
 ```
 
 ### Fine-tuning the truncation
-To speed up things, you may want to fine-tune the truncation behavior to have it applyed only when you want to. `cakephp-test-suite-light` provides many ways to do it.
+To speed up things, you may want to fine-tune the truncation behavior. `cakephp-test-suite-light` provides many ways to do it.
 
 The main idea is that truncation can be enabled or disabled :
 - For all tests
@@ -106,117 +133,101 @@ The main idea is that truncation can be enabled or disabled :
 
 **Important: Tuning will have no effect on ignored connections**
 
-#### Disabling truncation at once for all connections
-You can turn off default truncation behavior by setting up `CTSL_ALWAYS_SKIP_TRUNCATE` to whatever value in environment before running tests (in the [PHPUnit configuration](https://phpunit.readthedocs.io/en/latest/configuration.html?highlight=env#the-env-element), test bootstrap, in the shell...).
+#### Permanently disable truncation for a whole run
+In this mode, no database monitoring and truncation will never occurs. It guarantees the fastest start time but, obviously, it is only meant for specific cases (focusing on some tests while writing code for instance) and eventually leave the cleaning up to you.
 
-Even if globally disabled, truncation can be forced per connection or test case.
-
-The environment variables are evaluated before each test and my be tweaked at any time before next truncation should be decided.
-
-If for some reasons, you need to adjust this in a test case or a test, you can use the `TunerTrait` helper :
+Truncation can be permanently disabled by setting up `CTSL_DISABLE_TRUNCATION` to any value in environment, **before the first test starts**. It can be done through [PHPUnit configuration](https://phpunit.readthedocs.io/en/latest/configuration.html?highlight=env#the-env-element), test bootstrap, in the shell... You can also use this snippet in yout test bootstrap to achieve the same goal :
 
 ```php
 <?php
-use CakephpTestSuiteLight\TunerTrait;
-
-class YourTest extends TestCase {
-    use TunerTrait;
-
-    public function setUp(): void
-    {
-        // Disable global truncation behavior
-        $this->disableTruncation();
-    }
-
-    public function tearDown(): void
-    {
-        // Restore global truncation behavior
-        $this->enableTruncation();
-    }
-}
+	// in tests/bootstrap.php
+	CakephpTestSuiteLight\TablesTruncation::disable();
+?>
 ```
+
+**This setting will never be overriden by any further configuration.**
+
+#### Change global truncation policy
+Default global policy is to performs truncation in all tests databases.
+
+You can revert this behavior by setting up `CTSL_SKIP_ALL_TRUNCATIONS` to any value in environment before running tests.
+
+To be active at start, it can be done through the [PHPUnit configuration](https://phpunit.readthedocs.io/en/latest/configuration.html?highlight=env#the-env-element), test bootstrap, in the shell... You can also use this snippet in test bootstrap to disable automatic truncations :
 
 ```php
 <?php
-use CakephpTestSuiteLight\TunerTrait;
-
-class YourTest extends TestCase {
-    use TunerTrait;
-
-    public function testSomething(): void
-    {
-        // Do something to data and wanna keep it
-        $this->disableTruncation();
-    }
-
-    public function testSomethingAfter(): void
-    {
-        // Do something to data and wanna clear the data
-        $this->enableTruncation();
-    }
-}
+	// in tests/bootstrap.php
+	CakephpTestSuiteLight\TablesTruncation::skipAllTruncations();
+?>
 ```
 
-#### Tuning truncation per connection(s)
-As stated before, a connection can simply be ignored once and for all (see [Ignoring connections](#ignoring-connections)). In that case, truncation will never occurs.
+At runtime, the best way to enable or disable truncations **for next test** is to use one of [the provided traits](#tuning-truncation-per-test-case).
 
-If truncation are globally enabled, you can tell the fixture manager to skip truncation for some connections by setting up `CTSL_SKIP_TRUNCATE=<connection1>[,<connection2>...]` using connection names.
+Even if globally disabled, truncation can hopefully still be triggered at runtime (see below).
 
-If truncation are globally disabled, you can tell the fixture manager to perform truncation for some connections by setting up `CTSL_FORCE_TRUNCATE=<connection1>[,<connection2>...]` using connection names.
+#### Truncation policy per connection
+As stated before, a connection can simply be ignored once and for all (see [ignoring connections](#ignoring-connections)). In that case, truncation should and will never be occur. **This is the only reliable way to guarantee that a test database won't be emptied as policies can always be overidden**.
 
-The environment variables are evaluated before each test and my be tweaked at any time before next truncation should be decided.
+:warning: Setting up a connection policy will override global policy for this connection
 
-#### Tuning truncation per test case
-You may wish to skip the truncation in a whole test case. For example if you know in advance that
-your tests do not interact with the database, or if you do not mind having a dirty DB at the beginning of your tests.
-This is made at the test class level, by letting your test class using the trait `CakephpTestSuiteLight\SkipTablesTruncation`.
+You can tell the fixture manager to skip truncation for any connections by setting up `CTSL_SKIP_TRUNCATION=<connection1>[,<connection2>...]` in environment using connection names. At the opposite, you can tell the fixture manager to always perform truncation for any connections by setting up `CTSL_FORCE_TRUNCATION=<connection1>[,<connection2>...]` in environment using connection names. You can also use these snippets in test bootstrap to set it up from start :
+
+```php
+<?php
+	// in tests/bootstrap.php
+
+	// Always skip connection "cloud" when doing autotruncations as default
+	CakephpTestSuiteLight\TablesTruncation::skipTruncation('cloud');
+
+	// OR
+	// Disable autotruncations for all connections
+	CakephpTestSuiteLight\TablesTruncation::skipAllTruncations();
+	// except for testA and testB connections
+	CakephpTestSuiteLight\TablesTruncation::forceTruncation('testA', 'testB');
+?>
+```
+
+You may also use the [`CakephpTestSuiteLight\TablesTruncationTrait`](#using-the-tables-truncation-trait) to tweak settings at runtime.
+
+#### Overriding truncation policies in a test case
+It can be useful if you know in advance that your tests do not interact with the database, or if you do not mind having a dirty DB at the beginning of each your tests. This can be quicky settled by letting your test class using the trait `CakephpTestSuiteLight\SkipTablesTruncation`.
 
 At the opposite, if you wish to always perform truncation, use the `CakephpTestSuiteLight\ForceTablesTruncation` trait.
 
-**Caution : This will override global and per connection settings**
+You can also use the [`CakephpTestSuiteLight\TablesTruncationTrait`](#using-the-tables-truncation-trait) for more fine-grained control when dealing with multiple connections.
 
-If you need more fine-grained control, you can use `CakephpTestSuiteLight\TunerTrait` :
+:warning: This will override global and per connection policies
+
+#### Using the tables truncation trait
+To ease runtime handling of truncation and override any policies, you can use `CakephpTestSuiteLight\TablesTruncationTrait` which exposes some convenient methods :
+
+- `TablesTruncationTrait::doAllTruncations` : Activate automatic truncation for all connections (except the ignored ones)
+- `TablesTruncationTrait::skipAllTruncations` : Disable automatic truncation for all connections
+- `TablesTruncationTrait::forceTruncation(string $conn1[, string $conn2,...])` : Force truncation for all provided connections. Pass `false` to clear configuration. Pass `'*'` to register all connections.
+- `TablesTruncationTrait::getForcedConnections()` : Returns all the connections names with truncation enabled.
+- `TablesTruncationTrait::skipTruncation(string $conn1[, string $conn2,...])` : Skip truncation for all provided connections. Pass `false` to clear configuration.  Pass `'*'` to register all connections.
+- `TablesTruncationTrait::getSkippedConnections()` : Returns all the connections names with truncation disabled.
+- `TablesTruncationTrait::truncateTables([string $conn1,...])` : Requests manual truncation. If connection(s) name(s) are provided, truncation will be **forced** done in database(s) regardless all policies. This is most designed for very specific cases when you may want to perform truncations at runtime for debugging purposes.
+
+ Always remember that truncation is done **before** each test. Therefore, to have overriden policies applied for the first one of the test case, things must be done in `setUpBeforeClass` or `setUp` hooks. Global and per-connection policies are then automatically restored at the end of the test case.
 
 ```php
 <?php
-use CakephpTestSuiteLight\TunerTrait;
+use CakephpTestSuiteLight\TablesTruncationTrait;
 
 class YourTest extends TestCase {
-  use TunerTrait;
+  use TablesTruncationTrait;
 
   public function setUp(): void
   {
-      // always truncate dirty tables in connection test
-      $this->forceTruncation('test');
+      // Always truncate dirty tables in connection test
+      $this->enableTruncation('test');
+
       // avoid truncating tables in connections cloud1 and cloud2
-      $this->skipTruncation('cloud1', 'cloud2');
-      // ...
+      $this->disableTruncation('cloud1', 'cloud2');
   }
-
-  // ...
 }
-```
-
-Or manually set up env vars in test case `setUp` and `tearDown` :
-
-```php
-<?php
-public function setUp(): void
-{
-    // always truncate dirty tables in connection test
-    putenv('CTSL_FORCE_TRUNCATE=test');
-    // never truncate tables in connections cloud1 and cloud2
-    putenv('CTSL_SKIP_TRUNCATE=cloud1,cloud2');
-    // ...
-}
-
-public function tearDown(): void
-{
-    // We need to clear env vars as they will remain active for following test cases
-    putenv('CTSL_FORCE_TRUNCATE');
-    putenv('CTSL_SKIP_TRUNCATE');
-    // ...
-}
+?>
 ```
 
 ### Temporary vs non-temporary dirty table collector

@@ -18,6 +18,8 @@ use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\TablesTruncation;
+use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Exception;
 use function strpos;
@@ -39,6 +41,11 @@ class FixtureManager extends BaseFixtureManager
     private $activeConnections;
 
     /**
+     * @var bool
+     */
+    protected $_sniffersStarted = false;
+
+    /**
      * @param string $name
      * @return ConnectionInterface
      */
@@ -56,14 +63,68 @@ class FixtureManager extends BaseFixtureManager
     }
 
     /**
-     * Scan all test connections and truncate the dirty tables
+     * Start sniffers for all connections
+     *
+     * Start is disabled if truncation is permanently disabled. ZA flag is used to avoid
+     * duplicated starts.
+     *
      * @return void
      */
-    public function truncateDirtyTables(): void
+    public function startSniffers(): void
     {
-        foreach ($this->getActiveConnections() as $connection) {
-            SnifferRegistry::get($connection)->truncateDirtyTables();
+        if (TablesTruncation::isTruncationDisabled()) {
+            return;
         }
+
+        if ($this->_sniffersStarted) {
+            return;
+        }
+
+        foreach ($this->getActiveConnections() as $connection) {
+            SnifferRegistry::set($connection);
+        }
+
+        $this->_sniffersStarted = true;
+    }
+
+    /**
+     * Get sniffer from connection name
+     *
+     * @param  string           $connectionName Connection name
+     * @return BaseTableSniffer                 Sniffer instance
+     */
+    public function getSniffer(string $connectionName): BaseTableSniffer
+    {
+        return SnifferRegistry::get($connectionName);
+    }
+
+    /**
+     * Scan all test connections and truncate the dirty tables based on truncation policies
+     *
+     * The truncation can be forced on any connection(s) by providing an
+     * array of targeted collection names. This has the highest priority and override any setting
+     * done through environment variable. Ignored connections are still safe though.
+     *
+     * @param  string[]|null $connectionNames Connections names
+     * @return string[]|null Returns `null` if truncation is disabled or an array containing truncated connections name
+     */
+    public function truncateDirtyTables(?array $connectionNames = []): ?array
+    {
+        if (TablesTruncation::isTruncationDisabled()) {
+            return null;
+        }
+
+        $truncated = [];
+        $connections = empty($connectionNames) ?
+          TablesTruncation::getConnectionsToTruncate($this->getActiveConnections()) :
+          $connectionNames;
+
+        foreach ($connections as $connection) {
+            $this->getSniffer($connection)->truncateDirtyTables();
+            $truncated[] = $connection;
+        }
+
+        return $truncated;
     }
 
     /**
