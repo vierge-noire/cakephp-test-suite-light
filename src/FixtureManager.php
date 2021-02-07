@@ -46,6 +46,7 @@ class FixtureManager extends BaseFixtureManager
     protected $_sniffersStarted = false;
 
     /**
+    
      * @param string $name
      * @return ConnectionInterface
      */

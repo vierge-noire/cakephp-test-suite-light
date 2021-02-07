@@ -136,6 +136,9 @@ The main idea is that truncation can be enabled or disabled :
 #### Permanently disable truncation for a whole run
 In this mode, no database monitoring and truncation will never occurs. It guarantees the fastest start time but, obviously, it is only meant for specific cases (focusing on some tests while writing code for instance) and eventually leave the cleaning up to you.
 
+If you use a different database engine, you will have to provide your own. It should extend
+the `BaseTableSniffer` class.
+
 Truncation can be permanently disabled by setting up `CTSL_DISABLE_TRUNCATION` to any value in environment, **before the first test starts**. It can be done through [PHPUnit configuration](https://phpunit.readthedocs.io/en/latest/configuration.html?highlight=env#the-env-element), test bootstrap, in the shell... You can also use this snippet in yout test bootstrap to achieve the same goal :
 
 ```php
@@ -240,6 +243,23 @@ The present plugin collects the dirty tables in a dedicated table with the help 
 This table is per default permanent, but it can be set to temporary in order to keep it invisible to the code.
 
 In ordert to do so, in your test DB settings, set the key `'dirtyTableCollectorMode'` to `'TEMP'`.
+
+### Temporary vs non-temporary dirty table collector
+
+The present plugin collects the dirty tables in a dedicated table with the help of triggers.
+This table is per default temporary in order to keep it invisible to the code.
+
+One of the advantage of the present test suite, consists in the fact that the test database is cleaned before each test,
+rather than after. This enables the developer to perform queries in the test database and observe the state in which
+a given test left the database.
+
+Due to the fact that triggers are created on all tables creating inserts in the temporary dirty table collector,
+the developer will not be able to perform any manual inserts in the test database outside the test suite.
+
+If needed, one solution consists in dropping the test database and re-running the migrations. A second solution
+consists in having the dirty table collector non-temporary. This is possible at the connection level, by
+calling in `tests/bootstrap.php` `CakephpTestSuiteLight\Sniffer\SnifferRegistry::get('your_test_connection_name')->activateMainMode();`
+with `your_test_connection_name` being typically `test`. 
 
 ### Using CakePHP fixtures
 

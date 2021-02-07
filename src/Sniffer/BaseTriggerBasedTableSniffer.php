@@ -128,6 +128,8 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
         if ($this->isInTempMode()) {
             $this->markAllTablesAsDirty();
         }
+      
+        $this->truncateDirtyTables();
     }
 
     /**
