@@ -13,8 +13,12 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight;
 
-
 trait SkipTablesTruncation
 {
-    public $skipTablesTruncation = true;
+    use TablesTruncationTrait;
+
+    public function overrideTruncationPolicies(\PHPUnit\Framework\Test $test)
+    {
+        $this->skipTruncation('*');
+    }
 }
