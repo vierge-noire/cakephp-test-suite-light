@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace TestCase;
 
+use Cake\ORM\TableRegistry;
 use CakephpTestSuiteLight\FixtureInjector;
 use CakephpTestSuiteLight\FixtureManager;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +38,8 @@ class FixtureInjectorTest extends TestCase
     {
         $test = $this->createMock(TestCase::class);
         $this->FixtureInjector->startTest($test);
-        $this->assertTrue(true);
+        $configName = TableRegistry::getTableLocator()->get('Countries')->getConnection()->configName();
+        $this->assertSame('test', $configName);
     }
 
     /**
@@ -48,7 +50,8 @@ class FixtureInjectorTest extends TestCase
         $test = $this->createMock(\Cake\TestSuite\TestCase::class);
         $test->fixtures = null;
         $this->FixtureInjector->startTest($test);
-        $this->assertTrue(true);
+        $configName = TableRegistry::getTableLocator()->get('Countries')->getConnection()->configName();
+        $this->assertSame('test', $configName);
     }
 
     /**
