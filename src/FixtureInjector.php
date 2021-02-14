@@ -49,7 +49,9 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * @param TestSuite $suite
      */
     public function startTestSuite(TestSuite $suite): void
-    {}
+    {
+        $this->_fixtureManager->aliasConnections();
+    }
 
     /**
      * Cleanup before test starts

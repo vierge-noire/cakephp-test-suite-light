@@ -31,7 +31,7 @@ class FixtureManager extends BaseFixtureManager
     /**
      * @var bool
      */
-    private static $_configIsLoaded = false;
+    private static $aliasConnectionIsLoaded = false;
 
     /**
      * @var array|null
@@ -52,7 +52,10 @@ class FixtureManager extends BaseFixtureManager
      */
     public function aliasConnections()
     {
-        $this->_aliasConnections();
+        if (!self::$aliasConnectionIsLoaded) {
+            $this->_aliasConnections();
+            self::$aliasConnectionIsLoaded = true;
+        }
     }
 
     /**
