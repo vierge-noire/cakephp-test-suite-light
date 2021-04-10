@@ -16,6 +16,8 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestMigrator\Migrator;
+use CakephpTestMigrator\TestSchemaCleaner;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
@@ -34,7 +36,6 @@ class TableSnifferTest extends TestCase
         // The order here is important
         CountriesFixture::class,
         CitiesFixture::class,
-
     ];
 
     public $autoFixtures = false;
@@ -59,7 +60,7 @@ class TableSnifferTest extends TestCase
         unset($this->TableSniffer);
 
         ConnectionManager::drop('test_dummy_connection');
-        
+
         parent::tearDown();
     }
 
@@ -141,17 +142,13 @@ class TableSnifferTest extends TestCase
     }
 
     /**
-     * If a DB is not created, the sniffers should throw an exception
+     * If a DB is not created, the sniffers should not throw on exception.
      */
     public function testGetSnifferOnNonExistentDB()
     {
         $this->createNonExistentConnection();
-        if ($this->driverIs('Sqlite')) {
-            $this->assertTrue(true);
-        } else {
-            $this->expectException(\Exception::class);
-        }
-        SnifferRegistry::get('test_dummy_connection');
+        $sniffer = SnifferRegistry::get('test_dummy_connection');
+        $this->assertInstanceOf(BaseTableSniffer::class, $sniffer);
     }
 
     public function testImplodeSpecial()
@@ -238,6 +235,7 @@ class TableSnifferTest extends TestCase
     {
         $this->skipUnless($this->TableSniffer->implementsTriggers());
 
+        $this->expectException(\PDOException::class);
         $this->TableSniffer->createTriggers();
 
         $triggers = $this->TableSniffer->getTriggers();
@@ -245,15 +243,6 @@ class TableSnifferTest extends TestCase
             'dirty_table_spy_cities',
             'dirty_table_spy_countries',
         ], $triggers);
-    }
-
-    public function testDropTriggers()
-    {
-        $this->TableSniffer->dropTriggers();
-        $this->assertArraysHaveSameContent([], $this->TableSniffer->getTriggers());
-        if ($this->TableSniffer->implementsTriggers()) {
-            $this->TableSniffer->createTriggers();
-        }
     }
 
     public function testSwitchMode()
@@ -270,5 +259,24 @@ class TableSnifferTest extends TestCase
         }
 
         $this->TableSniffer->setMode($mode);
+    }
+
+    public function testRecreateDirtyTableCollectorAfterDrop()
+    {
+        $this->skipUnless($this->TableSniffer->implementsTriggers());
+
+        TestSchemaCleaner::dropSchema('test');
+        Migrator::migrate();
+
+        $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
+        $this->assertSame(false, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
+
+        $this->TableSniffer->beforeTestStarts();
+
+        $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
+
+
+        $exp = !getenv('SNIFFERS_IN_TEMP_MODE');
+        $this->assertSame($exp, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
     }
 }

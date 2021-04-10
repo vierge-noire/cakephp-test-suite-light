@@ -43,9 +43,6 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTriggers()
     {
-        // drop triggers
-        $this->dropTriggers();
-
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $triggerPrefix = self::TRIGGER_PREFIX;
 
@@ -82,19 +79,6 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     /**
      * @inheritDoc
      */
-    public function start()
-    {
-        parent::start();
-
-        $this->createDirtyTableCollector();
-        $this->createTriggers();
-        $this->createTruncateDirtyTablesProcedure();
-        $this->cleanAllTables();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function shutdown()
     {
         parent::shutdown();
@@ -103,6 +87,9 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
         $this->dropDirtyTableCollector();
     }
 
+    /**
+     * @inheritDoc
+     */
     public function createTruncateDirtyTablesProcedure()
     {
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;

@@ -19,9 +19,10 @@ use Cake\Datasource\ConnectionManager;
 use Cake\Log\Log;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
+use CakephpTestMigrator\Migrator;
+use CakephpTestMigrator\TestSchemaCleaner;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use Migrations\Migrations;
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
@@ -164,7 +165,7 @@ $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 if (getenv('SNIFFERS_IN_TEMP_MODE')) {
-    ConnectionManager::get('test')->execute('DROP TABLE IF EXISTS ' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR);
+    TestSchemaCleaner::dropSchema('test');
 }
 
 Configure::write('Session', [
@@ -200,11 +201,8 @@ Security::setSalt('a-long-but-not-random-value');
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
 if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
-    SnifferRegistry::get('test')->dropTables(
-        SnifferRegistry::get('test')->getAllTables(true)
-    );
+    TestSchemaCleaner::dropSchema('test');
 }
 
 // Run migrations
-$migrations = new Migrations();
-$migrations->migrate();
+Migrator::migrate();

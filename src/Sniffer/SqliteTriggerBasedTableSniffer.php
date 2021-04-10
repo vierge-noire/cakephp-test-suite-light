@@ -64,9 +64,6 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTriggers()
     {
-        // drop triggers
-        $this->dropTriggers();
-
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $triggerPrefix = self::TRIGGER_PREFIX;
         $temporary = $this->isInTempMode() ? 'TEMPORARY' : '';
@@ -92,13 +89,9 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     /**
      * @inheritDoc
      */
-    public function start()
+    public function createTruncateDirtyTablesProcedure()
     {
-        parent::start();
-
-        $this->createDirtyTableCollector();
-        $this->createTriggers();
-        $this->cleanAllTables();
+        // Do nothing, as Sqlite does not support procedures
     }
 
     /**
