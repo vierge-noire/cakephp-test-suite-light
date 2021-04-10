@@ -71,7 +71,7 @@ class TableSnifferWithFixturesTest extends TestCase
         unset($this->Countries);
         unset($this->Cities);
         ConnectionManager::drop('test_dummy_connection');
-        
+
         parent::tearDown();
     }
 
@@ -183,7 +183,7 @@ class TableSnifferWithFixturesTest extends TestCase
         );
     }
 
-    public function testGetAndDropTriggers()
+    public function testGetTriggers()
     {
         $this->skipIf(!$this->TableSniffer->implementsTriggers());
 
@@ -194,12 +194,5 @@ class TableSnifferWithFixturesTest extends TestCase
         ];
 
         $this->assertArraysHaveSameContent($expected, $found);
-
-        $this->TableSniffer->dropTriggers();
-        $expected = [];
-        $found = $this->TableSniffer->getTriggers();
-        $this->assertArraysHaveSameContent($expected, $found);
-
-        $this->TableSniffer->start();
     }
 }
