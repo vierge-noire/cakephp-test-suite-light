@@ -27,10 +27,10 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     {
         try {
             $this->getConnection()->execute('CALL TruncateDirtyTables();');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // The dirty table collector might not be found because the session
             // was interrupted.
-            $this->restart();
+            $this->beforeTestStarts();
         }
     }
 
@@ -39,9 +39,6 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTriggers(): void
     {
-        // drop triggers
-        $this->dropTriggers();
-
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $triggerPrefix = self::TRIGGER_PREFIX;
 
@@ -65,20 +62,6 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     /**
      * @inheritDoc
      */
-    public function start(): void
-    {
-        parent::start();
-
-        // create dirty tables collector
-        $this->createDirtyTableCollector();
-        $this->createTriggers();
-        $this->createTruncateDirtyTablesProcedure();
-        $this->cleanAllTables();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function shutdown(): void
     {
         parent::shutdown();
@@ -88,7 +71,7 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     }
 
     /**
-     * @return void
+     * @inheritDoc
      */
     public function createTruncateDirtyTablesProcedure(): void
     {

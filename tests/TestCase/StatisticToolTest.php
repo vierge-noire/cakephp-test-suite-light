@@ -16,6 +16,8 @@ namespace TestCase;
 
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestMigrator\Migrator;
+use CakephpTestMigrator\TestSchemaCleaner;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\StatisticTool;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -52,11 +54,13 @@ class StatisticToolTest extends TestCase
     /**
      * Given 2 tables are created and the process time is 0.129s
      * When the fixture manager collects dirty tables
-     * When the statistics get collected
+     * And the statistics get collected
      * Then the statistics should be coherent
      */
     public function testCollectTestStatistics()
     {
+        TestSchemaCleaner::dropSchema('test');
+        Migrator::migrate();
         // Arrange
         $this->StatisticTool->startsTestTime();
         $this->StatisticTool->startsLoadingFixturesTime();
