@@ -23,7 +23,8 @@
   "require-dev": {
     "cakephp/migrations": "^2.3",
     "josegonzalez/dotenv": "dev-master",
-    "phpunit/phpunit": "^6.1"
+    "phpunit/phpunit": "^6.1",
+    "vierge-noire/cakephp-test-migrator": "dev-cake3_next"
   },
   "autoload": {
     "psr-4": {

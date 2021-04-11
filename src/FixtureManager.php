@@ -17,6 +17,7 @@ use Cake\Core\Configure;
 use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
+use CakephpTestMigrator\TestSchemaCleaner;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Exception;
 use function strpos;
@@ -96,13 +97,12 @@ class FixtureManager extends BaseFixtureManager
     /**
      * Get the appropriate sniffer and drop all tables
      * @param string $connectionName
+     * @deprecated the schema is not handled by this package.
      * @return void
      */
     public function dropTables(string $connectionName)
     {
-        SnifferRegistry::get($connectionName)->dropTables(
-            SnifferRegistry::get($connectionName)->fetchAllTables()
-        );
+        TestSchemaCleaner::dropSchema($connectionName);
     }
 
     /**
@@ -126,6 +126,7 @@ class FixtureManager extends BaseFixtureManager
      * Those are the connections that are neither ignored,
      * nor irrelevant (debug_kit, non-test DBs etc...)
      * @return array
+     * @throws \RuntimeException
      */
     public function getActiveConnections(): array
     {
@@ -171,7 +172,7 @@ class FixtureManager extends BaseFixtureManager
                                     get_class($test),
                                     $e->getMessage()
                                 );
-                                throw new Exception($msg, 0, $e);
+                                throw new \RuntimeException($msg, 0, $e);
                             }
                         }
                     });

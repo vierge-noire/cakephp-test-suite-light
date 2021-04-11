@@ -13,7 +13,7 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Sniffer;
 
-use Cake\Database\Exception;
+use Cake\Database\Schema\BaseSchema;
 use Cake\Datasource\ConnectionInterface;
 
 abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
@@ -44,12 +44,14 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
 
     /**
      * Get triggers relative to the database dirty table collector
+     * @deprecated triggers are not dropped and do not need to be fetched.
      * @return array
      */
     abstract public function getTriggers(): array;
 
     /**
      * Drop triggers relative to the database dirty table collector
+     * @deprecated Triggers will not be dropped any more. The present package expects a clean schema.
      * @return void
      */
     abstract public function dropTriggers();
@@ -67,6 +69,12 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     abstract public function markAllTablesAsDirty();
 
     /**
+     * Create the procedure truncating the dirty tables.
+     * @return void
+     */
+    abstract public function createTruncateDirtyTablesProcedure();
+
+    /**
      * BaseTableTruncator constructor.
      * @param ConnectionInterface $connection
      */
@@ -74,6 +82,29 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     {
         $this->mode = $this->getDefaultMode($connection);
         parent::__construct($connection);
+    }
+
+    /**
+     * Check that the dirty table collector exists
+     *
+     * @return bool
+     */
+    public function dirtyTableCollectorExists(): bool
+    {
+        return in_array(self::DIRTY_TABLE_COLLECTOR, $this->getAllTables(true));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function beforeTestStarts()
+    {
+        if (!$this->dirtyTableCollectorExists()) {
+            $this->createDirtyTableCollector();
+            $this->createTriggers();
+            $this->createTruncateDirtyTablesProcedure();
+            $this->cleanAllTables();
+        }
     }
 
     /**
@@ -87,7 +118,7 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
         try {
             return $this->fetchQuery("SELECT table_name FROM " . self::DIRTY_TABLE_COLLECTOR);
         } catch (\Exception $e) {
-            $this->restart();
+            $this->beforeTestStarts();
             return $this->getAllTablesExceptPhinxlogs(true);
         }
     }

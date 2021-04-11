@@ -49,6 +49,7 @@ abstract class BaseTableSniffer
 
     /**
      * Drop tables passed as a parameter
+     * @deprecated table dropping is not handled by this package anymore.
      * @param array $tables
      * @return void
      */
@@ -61,7 +62,6 @@ abstract class BaseTableSniffer
     public function __construct(ConnectionInterface $connection)
     {
         $this->setConnection($connection);
-        $this->start();
     }
 
     /**
@@ -87,13 +87,14 @@ abstract class BaseTableSniffer
      * Create the spying triggers
      * @return void
      */
-    public function start()
+    public function beforeTestStarts()
     {
         $this->getAllTables(true);
     }
 
     /**
      * Stop spying
+     * @deprecated shutdowm will not be supported from 3.0 on.
      * @return void
      */
     public function shutdown()
@@ -103,11 +104,13 @@ abstract class BaseTableSniffer
      * Stop spying and restart
      * Useful if the schema or the
      * dirty table collector changed
+     * @deprecated the schema changes are not handled anymore by this package.
+     * @return void
      */
     public function restart()
     {
         $this->shutdown();
-        $this->start();
+        $this->beforeTestStarts();
     }
 
     /**
