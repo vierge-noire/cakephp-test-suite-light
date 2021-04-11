@@ -25,6 +25,7 @@ use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\TestUtil;
+use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -32,11 +33,12 @@ use TestApp\Test\Fixture\CountriesFixture;
 
 class TableSnifferDropTablesTest extends TestCase
 {
+    use InsertTestDataTrait;
+
     public $fixtures = [
         // The order here is important
         CountriesFixture::class,
         CitiesFixture::class,
-
     ];
 
     /**
@@ -131,24 +133,5 @@ class TableSnifferDropTablesTest extends TestCase
         if ($connection->config()['driver'] === Sqlite::class) {
             $connection->execute('PRAGMA foreign_keys = ON;' );
         }
-    }
-
-    private function createCountry(): EntityInterface
-    {
-        $country = $this->Countries->newEntity([
-            'name' => 'Foo',
-        ]);
-        return $this->Countries->saveOrFail($country);
-    }
-
-    private function createCity(): EntityInterface
-    {
-        $city = $this->Cities->newEntity([
-            'uuid_primary_key' => TestUtil::makeUuid(),
-            'id_primary_key' => rand(1, 99999999),
-            'name' => 'Foo',
-            'country_id' => $this->createCountry()->id
-        ]);
-        return $this->Cities->saveOrFail($city);
     }
 }

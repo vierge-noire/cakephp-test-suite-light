@@ -16,14 +16,13 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
-use Cake\Datasource\EntityInterface;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use CakephpTestSuiteLight\Test\TestUtil;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
+use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
@@ -33,6 +32,7 @@ use TestApp\Test\Fixture\CountriesFixture;
 class TableSnifferWithFixturesTest extends TestCase
 {
     use ArrayComparerTrait;
+    use InsertTestDataTrait;
     use SnifferHelperTrait;
 
     public $fixtures = [
@@ -85,13 +85,6 @@ class TableSnifferWithFixturesTest extends TestCase
             'countries',
             'cities',
         ];
-        if ($this->TableSniffer->implementsTriggers()) {
-            if ($this->driverIs('Sqlite') && $this->TableSniffer->isInTempMode()) {
-                $expected[] = 'temp.' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
-            } else {
-                $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
-            }
-        }
 
         $this->createCountry();
         $found = $this->TableSniffer->getDirtyTables();
@@ -138,25 +131,6 @@ class TableSnifferWithFixturesTest extends TestCase
         }
     }
 
-    private function createCountry(): EntityInterface
-    {
-        $country = $this->Countries->newEntity([
-            'name' => 'Foo',
-        ]);
-        return $this->Countries->saveOrFail($country);
-    }
-
-    private function createCity(): EntityInterface
-    {
-        $city = $this->Cities->newEntity([
-            'uuid_primary_key' => TestUtil::makeUuid(),
-            'id_primary_key' => rand(1, 99999999),
-            'name' => 'Foo',
-            'country_id' => $this->createCountry()->id
-        ]);
-        return $this->Cities->saveOrFail($city);
-    }
-
     /**
      * Given: A city with a country
      * When: Country gets deleted
@@ -171,7 +145,7 @@ class TableSnifferWithFixturesTest extends TestCase
         $this->Countries->delete($country);
     }
 
-    public function testTruncateWithForeignKey()
+    public function testTruncateDirtyTablesWithForeignKey()
     {
         $this->createCity();
 
