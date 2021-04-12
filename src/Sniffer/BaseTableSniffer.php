@@ -42,12 +42,6 @@ abstract class BaseTableSniffer
     abstract public function getDirtyTables(): array;
 
     /**
-     * List all tables
-     * @return array
-     */
-    abstract public function fetchAllTables(): array;
-
-    /**
      * Drop tables passed as a parameter
      * @deprecated table dropping is not handled by this package anymore.
      * @param array $tables
@@ -87,7 +81,7 @@ abstract class BaseTableSniffer
      * Create the spying triggers
      * @return void
      */
-    public function beforeTestStarts(): void
+    public function init(): void
     {
         $this->getAllTables(true);
     }
@@ -110,7 +104,7 @@ abstract class BaseTableSniffer
     public function restart(): void
     {
         $this->shutdown();
-        $this->beforeTestStarts();
+        $this->init();
     }
 
     /**
@@ -121,6 +115,7 @@ abstract class BaseTableSniffer
      * @param string $query
      *
      * @return array
+     * @deprecated queries should be fetched using the CakePHP native tools.
      */
     public function fetchQuery(string $query): array
     {
@@ -132,7 +127,6 @@ abstract class BaseTableSniffer
         } catch (\Exception $e) {
             $name = $this->getConnection()->configName();
             $db = $this->getConnection()->config()['database'];
-            var_dump($e->getMessage());
             throw new Exception("Error in the connection '$name'. Is the database '$db' created and accessible?");
         }
 
@@ -181,6 +175,15 @@ abstract class BaseTableSniffer
             $this->allTables = $this->fetchAllTables();
         }
         return $this->allTables;
+    }
+
+    /**
+     * List all tables
+     * @return string[]
+     */
+    public function fetchAllTables(): array
+    {
+        return $this->getConnection()->getSchemaCollection()->listTables();
     }
 
     /**

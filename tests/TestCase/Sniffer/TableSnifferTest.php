@@ -23,6 +23,7 @@ use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
+use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
@@ -30,6 +31,7 @@ use TestApp\Test\Fixture\CountriesFixture;
 class TableSnifferTest extends TestCase
 {
     use ArrayComparerTrait;
+    use InsertTestDataTrait;
     use SnifferHelperTrait;
 
     public $fixtures = [
@@ -74,7 +76,7 @@ class TableSnifferTest extends TestCase
     public function dataProviderOfDirtyTables()
     {
         return [
-            [true],
+//            [true],
             [false],
         ];
     }
@@ -200,7 +202,20 @@ class TableSnifferTest extends TestCase
         $this->assertArraysHaveSameContent($expected, $found);
     }
 
-    public function testMarkAllTablesAsDirty()
+    public function testGetAllTablesExceptPhinxlogsAndCollector()
+    {
+        $this->skipUnless($this->TableSniffer->implementsTriggers());
+
+        $found = $this->TableSniffer->getAllTablesExceptPhinxlogsAndCollector(true);
+        $expected = [
+            'cities',
+            'countries',
+        ];
+
+        $this->assertArraysHaveSameContent($expected, $found);
+    }
+
+    public function testMarkAllTablesAsDirtyOnEmptyDirtyTableCollector()
     {
         $this->skipUnless($this->TableSniffer->implementsTriggers());
 
@@ -213,7 +228,26 @@ class TableSnifferTest extends TestCase
         $this->assertArraysHaveSameContent([
             'cities',
             'countries',
-            BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR,
+        ], $dirtyTables);
+    }
+
+    public function testMarkAllTablesAsDirtyOnNotEmptyDirtyTableCollector()
+    {
+        $this->skipUnless($this->TableSniffer->implementsTriggers());
+
+        $this->createCountry();
+
+        $dirtyTables = $this->TableSniffer->getDirtyTables();
+        $this->assertArraysHaveSameContent([
+            'countries',
+        ], $dirtyTables);
+
+        $this->TableSniffer->markAllTablesAsDirty();
+
+        $dirtyTables = $this->TableSniffer->getDirtyTables();
+        $this->assertArraysHaveSameContent([
+            'cities',
+            'countries',
         ], $dirtyTables);
     }
 
@@ -271,7 +305,7 @@ class TableSnifferTest extends TestCase
         $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
         $this->assertSame(false, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
 
-        $this->TableSniffer->beforeTestStarts();
+        $this->TableSniffer->init();
 
         $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
 

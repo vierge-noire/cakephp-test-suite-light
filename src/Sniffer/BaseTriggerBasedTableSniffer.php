@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Sniffer;
 
-use Cake\Database\Schema\BaseSchema;
 use Cake\Datasource\ConnectionInterface;
 
 abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
@@ -63,7 +62,7 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     abstract public function createTriggers(): void;
 
     /**
-     * Mark all tables except phinxlogs as dirty
+     * Mark all tables except phinxlogs and dirty table collector as dirty.
      * @return void
      */
     abstract public function markAllTablesAsDirty(): void;
@@ -97,14 +96,24 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     /**
      * @inheritDoc
      */
-    public function beforeTestStarts(): void
+    public function init(): void
     {
         if (!$this->dirtyTableCollectorExists()) {
             $this->createDirtyTableCollector();
             $this->createTriggers();
             $this->createTruncateDirtyTablesProcedure();
-            $this->cleanAllTables();
+            $this->markAllTablesAsDirty();
         }
+    }
+
+    /**
+     * Get the name of the dirty table locator.
+     *
+     * @return string
+     */
+    public function collectorName(): string
+    {
+        return BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
     }
 
     /**
@@ -116,11 +125,28 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     public function getDirtyTables(): array
     {
         try {
-            return $this->fetchQuery("SELECT table_name FROM " . self::DIRTY_TABLE_COLLECTOR);
-        } catch (\Exception $e) {
-            $this->beforeTestStarts();
-            return $this->getAllTablesExceptPhinxlogs(true);
+            return $this->fetchQuery("SELECT table_name FROM " . $this->collectorName());
+        } catch (\Throwable $e) {
+            $this->init();
+            return $this->getDirtyTables();
         }
+    }
+
+    /**
+     * Fetch all tables, excluded from Phinx related and the dirty table collector.
+     *
+     * @param bool $forceFetch
+     * @return array
+     */
+    public function getAllTablesExceptPhinxlogsAndCollector(bool $forceFetch = false): array
+    {
+        $allTables = $this->getAllTablesExceptPhinxlogs($forceFetch);
+
+        if (($key = array_search($this->collectorName(), $allTables)) !== false) {
+            unset($allTables[$key]);
+        }
+
+        return $allTables;
     }
 
     /**
@@ -141,24 +167,13 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
 
     /**
      * Drop the table gathering the dirty tables
+     * @deprecated The dropping is handled by the schema manager.
      * @return void
      */
     public function dropDirtyTableCollector()
     {
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $this->getConnection()->execute("DROP TABLE IF EXISTS {$dirtyTable}");
-    }
-
-    /**
-     * The dirty table collector being temporary,
-     * ensure that all tables are clean when starting the suite
-     * @return void
-     */
-    public function cleanAllTables(): void
-    {
-        if ($this->isInTempMode()) {
-            $this->markAllTablesAsDirty();
-        }
     }
 
     /**
