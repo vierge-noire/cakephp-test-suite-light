@@ -17,6 +17,11 @@ namespace CakephpTestSuiteLight\Sniffer\DriverTraits;
 use Cake\Database\Connection;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 
+/**
+ * Trait MysqlSnifferTrait
+ * @package CakephpTestSuiteLight\Sniffer\DriverTraits
+ * @deprecated Sniffers are not queried anymore.
+ */
 trait MysqlSnifferTrait
 {
     /**
@@ -47,18 +52,6 @@ trait MysqlSnifferTrait
 
         $stmts = $this->implodeSpecial("DROP TRIGGER ", $triggers, ";");
         $this->getConnection()->execute($stmts);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("
-            SELECT table_name
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = DATABASE();
-        ");
     }
 
     /**
