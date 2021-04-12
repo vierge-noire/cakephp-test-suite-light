@@ -16,6 +16,11 @@ declare(strict_types=1);
 use Cake\Database\Connection;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 
+/**
+ * Trait SqliteSnifferTrait
+ * @package CakephpTestSuiteLight\Sniffer\DriverTraits
+ * @deprecated Sniffers are not queried anymore.
+ */
 trait SqliteSnifferTrait
 {
     /**
@@ -54,16 +59,6 @@ trait SqliteSnifferTrait
         foreach ($triggers as $trigger) {
             $this->getConnection()->execute("DROP TRIGGER {$trigger};");
         }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("
-             SELECT name FROM sqlite_master WHERE type='table' AND name != 'sqlite_sequence';
-        ");
     }
 
     /**

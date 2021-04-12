@@ -21,9 +21,12 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
 {
     use SqliteSnifferTrait;
 
-    private function getDirtyTableCollectorName(): string
+    /**
+     * @inheritDoc
+     */
+    public function collectorName(): string
     {
-        return ($this->isInTempMode() ? 'temp.' : '') . self::DIRTY_TABLE_COLLECTOR;
+        return ($this->isInTempMode() ? 'temp.' : '') . parent::collectorName();
     }
 
     /**
@@ -42,20 +45,21 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
 
         $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
             foreach ($tables as $table) {
-                $connection->execute("DELETE FROM {$table}");
+                $connection->delete($table);
                 try {
-                    $connection->execute("DELETE FROM sqlite_sequence WHERE name = '{$table}'");
+                    $connection->delete('sqlite_sequence', ['name' => $table]);
                 } catch (\PDOException $e) {}
             }
         });
 
-        $dirtyTable = $this->getDirtyTableCollectorName();
+        $dirtyTable = $this->collectorName();
         try {
-            $this->getConnection()->execute("DELETE FROM {$dirtyTable}");
+            $this->getConnection()->delete($dirtyTable); /** @phpstan-ignore-line */
         } catch (\Exception $e) {
             // The dirty table collector might not be found because the session
             // was interrupted.
-            $this->restart();
+            $this->init();
+            $this->truncateDirtyTables();
         }
     }
 
@@ -67,17 +71,13 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $triggerPrefix = self::TRIGGER_PREFIX;
         $temporary = $this->isInTempMode() ? 'TEMPORARY' : '';
-        $schemaName = $this->isInTempMode() ? 'temp.' : '';
 
         $stmts = [];
-        foreach ($this->getAllTablesExceptPhinxlogs() as $table) {
-            if ($table === $dirtyTable) {
-                continue;
-            }
+        foreach ($this->getAllTablesExceptPhinxlogsAndCollector(true) as $table) {
             $stmts[] = "
             CREATE {$temporary} TRIGGER {$triggerPrefix}{$table} AFTER INSERT ON `$table` 
                 BEGIN
-                    INSERT OR IGNORE INTO {$dirtyTable} VALUES ('{$table}'), ('{$schemaName}{$dirtyTable}');
+                    INSERT OR IGNORE INTO {$dirtyTable} VALUES ('{$table}');
                 END;
             ";
         }
@@ -110,11 +110,9 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function markAllTablesAsDirty()
     {
-        $tables = $this->getAllTablesExceptPhinxlogs();
-        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-        $tables[] = $dirtyTable;
+        $tables = $this->getAllTablesExceptPhinxlogsAndCollector();
 
-        $stmt = "INSERT OR IGNORE INTO {$dirtyTable} VALUES ('" . implode("'), ('", $tables) . "')";
+        $stmt = "INSERT OR IGNORE INTO {$this->collectorName()} VALUES ('" . implode("'), ('", $tables) . "')";
         $this->getConnection()->execute($stmt);
     }
 }
