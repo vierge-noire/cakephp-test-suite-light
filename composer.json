@@ -25,7 +25,7 @@
     "josegonzalez/dotenv": "dev-master",
     "phpstan/phpstan": "^0.12.48@dev",
     "phpunit/phpunit": "^8.0",
-    "vierge-noire/cakephp-test-migrator": "dev-next"
+    "vierge-noire/cakephp-test-migrator": "^2.2"
   },
   "autoload": {
     "psr-4": {

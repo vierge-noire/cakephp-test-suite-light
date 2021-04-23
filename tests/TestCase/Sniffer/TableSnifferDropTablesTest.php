@@ -19,7 +19,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\TestSchemaCleaner;
+use CakephpTestMigrator\SchemaCleaner;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
@@ -95,7 +95,7 @@ class TableSnifferDropTablesTest extends TestCase
             $this->Cities->find()->count()
         );
 
-        TestSchemaCleaner::dropSchema('test');
+        (new SchemaCleaner)->drop('test');
 
         $this->assertSame([], $this->TableSniffer->fetchAllTables());
 
@@ -106,7 +106,7 @@ class TableSnifferDropTablesTest extends TestCase
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();
-        TestSchemaCleaner::dropSchema(
+        (new SchemaCleaner)->drop(
             $this->TableSniffer->getConnection()->configName()
         );
 
@@ -118,7 +118,7 @@ class TableSnifferDropTablesTest extends TestCase
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();    // This will create a country too
-        TestSchemaCleaner::dropSchema(
+        (new SchemaCleaner)->drop(
             $this->TableSniffer->getConnection()->configName()
         );
 
