@@ -17,7 +17,7 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\TestSchemaCleaner;
+use CakephpTestMigrator\SchemaCleaner;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
@@ -299,7 +299,7 @@ class TableSnifferTest extends TestCase
     {
         $this->skipUnless($this->TableSniffer->implementsTriggers());
 
-        TestSchemaCleaner::dropSchema('test');
+        (new SchemaCleaner)->drop('test');
         Migrator::migrate();
 
         $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
