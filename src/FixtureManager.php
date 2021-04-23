@@ -17,7 +17,6 @@ use Cake\Core\Configure;
 use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureManager as BaseFixtureManager;
-use CakephpTestMigrator\TestSchemaCleaner;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Exception;
 use function strpos;
@@ -92,17 +91,6 @@ class FixtureManager extends BaseFixtureManager
         }
 
         return true;
-    }
-
-    /**
-     * Get the appropriate sniffer and drop all tables
-     * @param string $connectionName
-     * @deprecated the schema is not handled by this package.
-     * @return void
-     */
-    public function dropTables(string $connectionName)
-    {
-        TestSchemaCleaner::dropSchema($connectionName);
     }
 
     /**

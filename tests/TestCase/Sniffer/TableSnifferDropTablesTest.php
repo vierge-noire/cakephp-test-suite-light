@@ -16,7 +16,6 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
-use Cake\Datasource\EntityInterface;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestMigrator\Migrator;
@@ -24,7 +23,6 @@ use CakephpTestMigrator\TestSchemaCleaner;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use CakephpTestSuiteLight\Test\TestUtil;
 use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
@@ -97,7 +95,7 @@ class TableSnifferDropTablesTest extends TestCase
             $this->Cities->find()->count()
         );
 
-        $this->FixtureManager->dropTables('test');
+        TestSchemaCleaner::dropSchema('test');
 
         $this->assertSame([], $this->TableSniffer->fetchAllTables());
 
