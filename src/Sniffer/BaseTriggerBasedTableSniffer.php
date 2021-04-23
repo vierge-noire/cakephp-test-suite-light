@@ -100,7 +100,13 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     {
         if (!$this->dirtyTableCollectorExists()) {
             $this->createDirtyTableCollector();
-            $this->createTriggers();
+            try {
+                $this->createTriggers();
+            } catch (\Throwable $e) {
+                $message = $e->getMessage();
+                $message .= ' ----- Please truncate your test schema manually and run the test suite again.';
+                throw new \RuntimeException($message);
+            }
             $this->createTruncateDirtyTablesProcedure();
             $this->markAllTablesAsDirty();
         }
