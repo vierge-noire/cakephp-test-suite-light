@@ -165,7 +165,7 @@ $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 if (getenv('SNIFFERS_IN_TEMP_MODE')) {
-    TestSchemaCleaner::dropSchema('test');
+    (new SchemaCleaner)->drop('test');
 }
 
 Configure::write('Session', [
