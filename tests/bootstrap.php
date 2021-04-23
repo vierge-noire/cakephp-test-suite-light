@@ -20,7 +20,7 @@ use Cake\Log\Log;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
 use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\TestSchemaCleaner;
+use CakephpTestMigrator\SchemaCleaner;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 
@@ -205,7 +205,7 @@ Security::setSalt('a-long-but-not-random-value');
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
 if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
-    TestSchemaCleaner::dropSchema('test');
+    (new SchemaCleaner)->drop('test');
 }
 
 // Run migrations
