@@ -12,9 +12,12 @@ export DB_DRIVER=$DRIVER
 
 #######################
 #### Tests with non temporary sniffers
+#### Skip MySQL
 #######################
-export SNIFFERS_IN_TEMP_MODE="true"
-./vendor/bin/phpunit
+if [ $DRIVER != 'Mysql' ]; then
+  export SNIFFERS_IN_TEMP_MODE="true"
+  ./vendor/bin/phpunit
+fi
 
 #### DEPRECATED #####
 # Run the tests using

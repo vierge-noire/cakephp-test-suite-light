@@ -19,14 +19,16 @@ use Cake\Datasource\ConnectionManager;
 use Cake\Log\Log;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
+use CakephpTestMigrator\Migrator;
+use CakephpTestMigrator\SchemaCleaner;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-use Migrations\Migrations;
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
 }
 define('ROOT', dirname(__DIR__));
+define('TESTS', ROOT . DS . 'tests' . DS);
 define('APP_DIR', 'src');
 define('APP_PATH', ROOT . DS . 'TestApp' . DS);
 define('VENDOR_PATH', ROOT . DS . 'vendor' . DS);
@@ -45,7 +47,6 @@ define('TEST_APP', CORE_TESTS . 'TestApp' . DS);
 
 // Point app constants to the test app.
 define('APP', TEST_APP . 'src' . DS);
-define('TESTS', TEST_APP . 'tests' . DS);
 define('WWW_ROOT', TEST_APP . 'webroot' . DS);
 define('CONFIG', TEST_APP . 'config' . DS);
 
@@ -116,14 +117,14 @@ if (!getenv('DB_DRIVER')) {
 }
 $driver =  getenv('DB_DRIVER');
 
-if (!file_exists(ROOT . DS . '.env')) {
-    @copy(".env.$driver", ROOT . DS . '.env');
+if (!file_exists(TESTS . '.env')) {
+    @copy(TESTS . ".env.$driver", TESTS . '.env');
 }
 
 /**
  * Read .env file(s).
  */
-$loadEnv(ROOT . DS . '.env');
+$loadEnv(TESTS . '.env');
 
 // Re-read the driver
 $driver =  getenv('DB_DRIVER');
@@ -164,7 +165,7 @@ $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 if (getenv('SNIFFERS_IN_TEMP_MODE')) {
-    ConnectionManager::get('test')->execute('DROP TABLE IF EXISTS ' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR);
+    (new SchemaCleaner)->drop('test');
 }
 
 Configure::write('Session', [
@@ -200,11 +201,8 @@ Security::setSalt('a-long-but-not-random-value');
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
 if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
-    SnifferRegistry::get('test')->dropTables(
-        SnifferRegistry::get('test')->getAllTables(true)
-    );
+    (new SchemaCleaner)->drop('test');
 }
 
 // Run migrations
-$migrations = new Migrations();
-$migrations->migrate();
+Migrator::migrate();

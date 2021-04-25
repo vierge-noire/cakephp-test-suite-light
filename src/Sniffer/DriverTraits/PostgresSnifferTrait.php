@@ -16,6 +16,11 @@ declare(strict_types=1);
 use Cake\Database\Connection;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 
+/**
+ * Trait PostgresSnifferTrait
+ * @package CakephpTestSuiteLight\Sniffer\DriverTraits
+ * @deprecated Sniffers are not queried anymore.
+ */
 trait PostgresSnifferTrait
 {
     /**
@@ -53,18 +58,6 @@ trait PostgresSnifferTrait
             $table = substr($trigger, strlen(BaseTriggerBasedTableSniffer::TRIGGER_PREFIX));
             $this->getConnection()->execute("DROP TRIGGER {$trigger} ON {$table};");
         }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function fetchAllTables(): array
-    {
-        return $this->fetchQuery("            
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'            
-        ");
     }
 
     /**

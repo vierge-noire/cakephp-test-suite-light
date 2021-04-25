@@ -26,15 +26,24 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function truncateDirtyTables()
     {
-        try {
+        $truncate = function() {
             $this->getConnection()->transactional(function (Connection $connection) {
                 $connection->execute('CALL TruncateDirtyTables();');
-                $connection->execute('TRUNCATE TABLE ' . self::DIRTY_TABLE_COLLECTOR . ' RESTART IDENTITY CASCADE;');
+                $connection->execute('TRUNCATE TABLE ' . $this->collectorName() . ' RESTART IDENTITY CASCADE;');
             });
-        } catch (\Exception $e) {
-            // The dirty table collector might not be found because the session
-            // was interrupted.
-            $this->restart();
+        };
+
+        try {
+            $truncate();
+        } catch (\Throwable $e) {
+//            // The dirty table collector might not be found because the session
+//            // was interrupted.
+            $this->init();
+            try {
+                $truncate();
+            } catch (\Throwable $e) {
+                throw new \RuntimeException($e->getMessage());
+            }
         }
     }
 
@@ -43,28 +52,19 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTriggers()
     {
-        // drop triggers
-        $this->dropTriggers();
-
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $triggerPrefix = self::TRIGGER_PREFIX;
 
         $stmts = [];
-        foreach ($this->getAllTablesExceptPhinxlogs() as $table) {
-            if ($table === $dirtyTable) {
-                continue;
-            }
+        foreach ($this->getAllTablesExceptPhinxlogsAndCollector(true) as $table) {
             $stmts[] = "
                 CREATE OR REPLACE FUNCTION mark_table_{$table}_as_dirty() RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
                 DECLARE
-                    spy_is_inactive {$dirtyTable}%ROWTYPE;                    
-                BEGIN
-                    SELECT * FROM {$dirtyTable} WHERE table_name = '{$table}' LIMIT 1 INTO spy_is_inactive;                                                 
-                    IF NOT FOUND THEN
-                        INSERT INTO {$dirtyTable} (table_name) VALUES ('{$table}'), ('{$dirtyTable}') ON CONFLICT DO NOTHING;                        
-                    END IF;
+                    spy_is_inactive {$dirtyTable}%ROWTYPE;
+                BEGIN              
+                    INSERT INTO {$dirtyTable} (table_name) VALUES ('{$table}') ON CONFLICT DO NOTHING;
                     RETURN NEW;
-                END;                
+                END;
                 $$
                 ";
 
@@ -82,19 +82,6 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     /**
      * @inheritDoc
      */
-    public function start()
-    {
-        parent::start();
-
-        $this->createDirtyTableCollector();
-        $this->createTriggers();
-        $this->createTruncateDirtyTablesProcedure();
-        $this->cleanAllTables();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function shutdown()
     {
         parent::shutdown();
@@ -103,19 +90,20 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
         $this->dropDirtyTableCollector();
     }
 
+    /**
+     * @inheritDoc
+     */
     public function createTruncateDirtyTablesProcedure()
     {
-        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
         $this->getConnection()->execute("
             CREATE OR REPLACE PROCEDURE TruncateDirtyTables() AS $$
             DECLARE
                 _rec    record;
             BEGIN           
                 FOR _rec IN (
-                    SELECT  * FROM {$dirtyTable} dt
+                    SELECT  * FROM {$this->collectorName()} dt
                     INNER JOIN information_schema.tables info_schema on dt.table_name = info_schema.table_name                    
                     WHERE info_schema.table_schema = 'public'
-                    AND dt.table_name != '{$dirtyTable}'
                 ) LOOP
                     BEGIN
                         EXECUTE 'TRUNCATE TABLE ' || _rec.table_name || ' RESTART IDENTITY CASCADE';
@@ -131,11 +119,9 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function markAllTablesAsDirty()
     {
-        $tables = $this->getAllTablesExceptPhinxlogs();
-        $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-        $tables[] = $dirtyTable;
-
-        $stmt = "INSERT INTO {$dirtyTable} VALUES ('" . implode("'), ('", $tables) . "') ON CONFLICT DO NOTHING";
-        $this->getConnection()->execute($stmt);
+        $tables = $this->getAllTablesExceptPhinxlogsAndCollector();
+        $this->getConnection()->execute(
+            "INSERT INTO {$this->collectorName()} VALUES ('" . implode("'), ('", $tables) . "') ON CONFLICT DO NOTHING"
+        );
     }
 }
