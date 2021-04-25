@@ -95,18 +95,6 @@ class FixtureManager extends BaseFixtureManager
     }
 
     /**
-     * Get the appropriate sniffer and drop all tables
-     * @param string $connectionName
-     * @return void
-     */
-    public function dropTables(string $connectionName): void
-    {
-        SnifferRegistry::get($connectionName)->dropTables(
-            SnifferRegistry::get($connectionName)->fetchAllTables()
-        );
-    }
-
-    /**
      * Initialize all connections used by the manager
      * @return array
      */
@@ -127,6 +115,7 @@ class FixtureManager extends BaseFixtureManager
      * Those are the connections that are neither ignored,
      * nor irrelevant (debug_kit, non-test DBs etc...)
      * @return array
+     * @throws \RuntimeException
      */
     public function getActiveConnections(): array
     {
@@ -148,7 +137,7 @@ class FixtureManager extends BaseFixtureManager
             // For Cake ^4.0
             return $this->_fixtureConnections($fixtures);
         } else {
-            throw new Exception(
+            throw new \RuntimeException(
                 'Neither groupFixturesByConnection nor _fixtureConnections defined in ' . self::class
             );
         }
@@ -189,7 +178,7 @@ class FixtureManager extends BaseFixtureManager
                                     get_class($test),
                                     $e->getMessage()
                                 );
-                                throw new Exception($msg, 0, $e);
+                                throw new \RuntimeException($msg, 0, $e);
                             }
                         }
                     });
