@@ -18,13 +18,13 @@
   "require": {
     "php": ">=7.0",
     "cakephp/cakephp": "^3.7",
-    "ext-pdo": "*"
+    "ext-pdo": "*",
+    "vierge-noire/cakephp-test-migrator": "^1.2"
   },
   "require-dev": {
     "cakephp/migrations": "^2.3",
     "josegonzalez/dotenv": "dev-master",
-    "phpunit/phpunit": "^6.1",
-    "vierge-noire/cakephp-test-migrator": "v1.2"
+    "phpunit/phpunit": "^6.1"
   },
   "autoload": {
     "psr-4": {
