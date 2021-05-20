@@ -22,6 +22,7 @@ use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
+use CakephpTestSuiteLight\Test\Traits\ExpectedSchemaTestTrait;
 use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
 use TestApp\Model\Table\CitiesTable;
@@ -32,6 +33,7 @@ use TestApp\Test\Fixture\CountriesFixture;
 class TableSnifferWithFixturesTest extends TestCase
 {
     use ArrayComparerTrait;
+    use ExpectedSchemaTestTrait;
     use InsertTestDataTrait;
     use SnifferHelperTrait;
 
@@ -97,11 +99,7 @@ class TableSnifferWithFixturesTest extends TestCase
     public function testGetAllTables()
     {
         $found = $this->TableSniffer->fetchAllTables();
-        $expected = [
-            'cities',
-            'countries',
-            'phinxlog',
-        ];
+        $expected = array_merge($this->allExpectedTables(), ['phinxlog']);
         if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
             $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }
@@ -112,10 +110,7 @@ class TableSnifferWithFixturesTest extends TestCase
     public function testGetAllTablesExceptPhinxlogs()
     {
         $found = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
-        $expected = [
-            'cities',
-            'countries',
-        ];
+        $expected = $this->allExpectedTables();
 
         if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
             $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
@@ -160,13 +155,7 @@ class TableSnifferWithFixturesTest extends TestCase
     public function testGetTriggers()
     {
         $this->skipIf(!$this->TableSniffer->implementsTriggers());
-
         $found = $this->TableSniffer->getTriggers();
-        $expected = [
-            'dirty_table_spy_countries',
-            'dirty_table_spy_cities',
-        ];
-
-        $this->assertArraysHaveSameContent($expected, $found);
+        $this->assertArraysHaveSameContent($this->allExpectedTriggers(), $found);
     }
 }

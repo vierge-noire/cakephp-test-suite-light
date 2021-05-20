@@ -53,7 +53,6 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     public function createTriggers(): void
     {
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-        $triggerPrefix = self::TRIGGER_PREFIX;
 
         $stmts = [];
         foreach ($this->getAllTablesExceptPhinxlogsAndCollector(true) as $table) {
@@ -69,7 +68,7 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
                 ";
 
             $stmts[] = "                
-                CREATE TRIGGER {$triggerPrefix}{$table} AFTER INSERT ON {$table}                
+                CREATE TRIGGER {$this->getTriggerName($table)} AFTER INSERT ON \"{$table}\"                
                 FOR EACH ROW
                     EXECUTE PROCEDURE mark_table_{$table}_as_dirty();                                                                                                                    
                 ";
@@ -106,7 +105,7 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
                     WHERE info_schema.table_schema = 'public'
                 ) LOOP
                     BEGIN
-                        EXECUTE 'TRUNCATE TABLE ' || _rec.table_name || ' RESTART IDENTITY CASCADE';
+                        EXECUTE 'TRUNCATE TABLE \"' || _rec.table_name || '\" RESTART IDENTITY CASCADE';
                     END;
                 END LOOP;                                
                 RETURN;                                

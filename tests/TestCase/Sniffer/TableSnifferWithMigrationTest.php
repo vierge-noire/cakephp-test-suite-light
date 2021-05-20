@@ -14,15 +14,19 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
+use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
+use CakephpTestSuiteLight\Test\Traits\ExpectedSchemaTestTrait;
 use Migrations\Migrations;
 
 class TableSnifferWithMigrationTest extends TestCase
 {
     use ArrayComparerTrait;
+    use ExpectedSchemaTestTrait;
 
     /**
      * @var Migrations
@@ -49,6 +53,15 @@ class TableSnifferWithMigrationTest extends TestCase
 
     public static function tearDownAfterClass(): void
     {
+        if (SnifferRegistry::get('test')->implementsTriggers()) {
+            // Drop the product entry
+            ConnectionManager::get('test')
+                ->newQuery()
+                ->delete(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR)
+                ->where(['table_name' => 'products'])
+                ->execute();
+        }
+
         if (SnifferRegistry::get('test')->implementsTriggers() &&  self::$snifferWasInTempMod) {
             SnifferRegistry::get('test')->activateTempMode();
         }
@@ -117,10 +130,7 @@ class TableSnifferWithMigrationTest extends TestCase
             'source' => 'TestMigrations',
         ]);
 
-        $expected = [
-            'dirty_table_spy_countries',
-            'dirty_table_spy_cities',
-        ];
+        $expected = $this->allExpectedTriggers();
 
         if ($this->TableSniffer->implementsTriggers()) {
             $this->assertArraysHaveSameContent($expected, $this->TableSniffer->getTriggers());
@@ -130,7 +140,7 @@ class TableSnifferWithMigrationTest extends TestCase
         $this->TableSniffer->restart();
 
         if ($this->TableSniffer->implementsTriggers()) {
-            $expected[] = 'dirty_table_spy_products';
+            $expected[] = 'dts_products';
             $this->assertArraysHaveSameContent($expected, $this->TableSniffer->getTriggers());
         }
 

@@ -22,7 +22,7 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      */
     const DIRTY_TABLE_COLLECTOR = 'test_suite_light_dirty_tables';
 
-    const TRIGGER_PREFIX = 'dirty_table_spy_';
+    const TRIGGER_PREFIX = 'dts_';
 
     const MODE_KEY = 'dirtyTableCollectorMode';
 
@@ -120,6 +120,17 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     public function collectorName(): string
     {
         return BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
+    }
+
+    /**
+     * The length of the trigger name is limited to 64 do to MySQL constrain.
+     *
+     * @param string $tableName Name of the table to create a trigger on.
+     * @return string
+     */
+    protected function getTriggerName(string $tableName): string
+    {
+        return substr(self::TRIGGER_PREFIX . $tableName, 0, 64);
     }
 
     /**

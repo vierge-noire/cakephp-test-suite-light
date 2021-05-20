@@ -56,7 +56,7 @@ trait PostgresSnifferTrait
 
         foreach ($triggers as $trigger) {
             $table = substr($trigger, strlen(BaseTriggerBasedTableSniffer::TRIGGER_PREFIX));
-            $this->getConnection()->execute("DROP TRIGGER {$trigger} ON {$table};");
+            $this->getConnection()->execute("DROP TRIGGER {$trigger} ON \"{$table}\";");
         }
     }
 
