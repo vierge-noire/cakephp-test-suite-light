@@ -23,6 +23,7 @@ use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
+use CakephpTestSuiteLight\Test\Traits\ExpectedSchemaTestTrait;
 use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -31,6 +32,7 @@ use TestApp\Test\Fixture\CountriesFixture;
 class TableSnifferTest extends TestCase
 {
     use ArrayComparerTrait;
+    use ExpectedSchemaTestTrait;
     use InsertTestDataTrait;
     use SnifferHelperTrait;
 
@@ -166,10 +168,6 @@ class TableSnifferTest extends TestCase
     {
         $this->skipUnless($this->TableSniffer->implementsTriggers());
 
-        $expected = [
-            'dirty_table_spy_cities',
-            'dirty_table_spy_countries',
-        ];
         if ($this->driverIs('Mysql')) {
             $found = $this->TableSniffer->fetchQuery('SHOW TRIGGERS');
         } elseif ($this->driverIs('Postgres')) {
@@ -180,10 +178,9 @@ class TableSnifferTest extends TestCase
             } else {
                 $found = $this->TableSniffer->fetchQuery('SELECT name FROM sqlite_master WHERE type = "trigger"');
             }
-
         }
 
-        foreach ($expected as $trigger) {
+        foreach ($this->allExpectedTriggers() as $trigger) {
             $this->assertSame(true, in_array($trigger, $found), "Trigger $trigger was not found");
         }
     }
@@ -191,10 +188,7 @@ class TableSnifferTest extends TestCase
     public function testGetAllTablesExceptPhinxlogs()
     {
         $found = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
-        $expected = [
-            'cities',
-            'countries',
-        ];
+        $expected = $this->allExpectedTables();
         if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
             $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }
@@ -205,14 +199,8 @@ class TableSnifferTest extends TestCase
     public function testGetAllTablesExceptPhinxlogsAndCollector()
     {
         $this->skipUnless($this->TableSniffer->implementsTriggers());
-
         $found = $this->TableSniffer->getAllTablesExceptPhinxlogsAndCollector(true);
-        $expected = [
-            'cities',
-            'countries',
-        ];
-
-        $this->assertArraysHaveSameContent($expected, $found);
+        $this->assertArraysHaveSameContent($this->allExpectedTables(), $found);
     }
 
     public function testMarkAllTablesAsDirtyOnEmptyDirtyTableCollector()
@@ -225,10 +213,7 @@ class TableSnifferTest extends TestCase
         $this->TableSniffer->markAllTablesAsDirty();
 
         $dirtyTables = $this->TableSniffer->getDirtyTables();
-        $this->assertArraysHaveSameContent([
-            'cities',
-            'countries',
-        ], $dirtyTables);
+        $this->assertArraysHaveSameContent($this->allExpectedTables(), $dirtyTables);
     }
 
     public function testMarkAllTablesAsDirtyOnNotEmptyDirtyTableCollector()
@@ -245,19 +230,13 @@ class TableSnifferTest extends TestCase
         $this->TableSniffer->markAllTablesAsDirty();
 
         $dirtyTables = $this->TableSniffer->getDirtyTables();
-        $this->assertArraysHaveSameContent([
-            'cities',
-            'countries',
-        ], $dirtyTables);
+        $this->assertArraysHaveSameContent($this->allExpectedTables(), $dirtyTables);
     }
 
     public function testGetTriggers()
     {
         if ($this->TableSniffer->implementsTriggers()) {
-            $expect = [
-                'dirty_table_spy_cities',
-                'dirty_table_spy_countries',
-            ];
+            $expect = $this->allExpectedTriggers();
         } else {
             $expect = [];
         }
@@ -273,10 +252,7 @@ class TableSnifferTest extends TestCase
         $this->TableSniffer->createTriggers();
 
         $triggers = $this->TableSniffer->getTriggers();
-        $this->assertArraysHaveSameContent([
-            'dirty_table_spy_cities',
-            'dirty_table_spy_countries',
-        ], $triggers);
+        $this->assertArraysHaveSameContent($this->allExpectedTriggers(), $triggers);
     }
 
     public function testSwitchMode()

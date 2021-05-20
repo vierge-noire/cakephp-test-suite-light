@@ -69,13 +69,12 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     public function createTriggers()
     {
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-        $triggerPrefix = self::TRIGGER_PREFIX;
         $temporary = $this->isInTempMode() ? 'TEMPORARY' : '';
 
         $stmts = [];
         foreach ($this->getAllTablesExceptPhinxlogsAndCollector(true) as $table) {
             $stmts[] = "
-            CREATE {$temporary} TRIGGER {$triggerPrefix}{$table} AFTER INSERT ON `$table` 
+            CREATE {$temporary} TRIGGER {$this->getTriggerName($table)} AFTER INSERT ON `$table` 
                 BEGIN
                     INSERT OR IGNORE INTO {$dirtyTable} VALUES ('{$table}');
                 END;

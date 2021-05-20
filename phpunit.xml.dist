@@ -12,10 +12,6 @@
 
     <!-- Add any additional test suites you want to run here -->
     <testsuites>
-        <!-- This test should run once first to ensure that the connections are well aliased -->
-        <testsuite name="Init">
-            <file>./tests/TestCase/FixtureInjectorTest.php</file>
-        </testsuite>
         <testsuite name="Default">
             <directory>./tests/TestCase/</directory>
         </testsuite>
