@@ -21,12 +21,13 @@ use Cake\Utility\Inflector;
 use Cake\Utility\Security;
 use CakephpTestMigrator\Migrator;
 use CakephpTestMigrator\SchemaCleaner;
+use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 
 # For testing purpose, initiate the FixtureManager first
 # This is not required.
-new \CakephpTestSuiteLight\FixtureManager();
+new FixtureManager();
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
@@ -66,7 +67,7 @@ require_once CORE_PATH . 'config/bootstrap.php';
 
 # For testing purpose, initiate the FixtureManager first
 # This is not required.
-new \CakephpTestSuiteLight\FixtureManager();
+new FixtureManager();
 
 date_default_timezone_set('UTC');
 mb_internal_encoding('UTF-8');
@@ -209,4 +210,4 @@ if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')-
 }
 
 // Run migrations
-Migrator::migrate();
+Migrator::migrate([], true);

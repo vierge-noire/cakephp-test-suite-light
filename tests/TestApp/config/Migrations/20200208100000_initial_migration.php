@@ -63,6 +63,9 @@ class InitialMigration extends AbstractMigration
         $this->table('cities')
             ->addForeignKey('country_id', 'countries', 'id', ['delete'=>'RESTRICT', 'update'=>'CASCADE'])
             ->save();
+
+        // Veeeery long table name (= 62) to ensure that the triggers get correctly created.
+        $this->table('12_123456789_123456789_123456789_123456789_123456789_123456789')->create();
     }
 
     /**
