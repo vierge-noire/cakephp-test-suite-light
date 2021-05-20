@@ -16,8 +16,6 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
-use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\SchemaCleaner;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\StatisticTool;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -59,8 +57,6 @@ class StatisticToolTest extends TestCase
      */
     public function testCollectTestStatistics()
     {
-        (new SchemaCleaner)->drop('test');
-        Migrator::migrate();
         // Arrange
         $this->StatisticTool->startsTestTime();
         $this->StatisticTool->startsLoadingFixturesTime();
