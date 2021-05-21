@@ -6,12 +6,12 @@ echo "Starting PHPUNIT tests"
 export DB_DRIVER=$DRIVER
 
 #######################
-#### Tests with temporary sniffers
+#### Tests with non temporary sniffers
 #######################
 ./vendor/bin/phpunit
 
 #######################
-#### Tests with non temporary sniffers
+#### Tests with temporary sniffers
 #### Skip MySQL
 #######################
 if [ $DRIVER != 'Mysql' ]; then
