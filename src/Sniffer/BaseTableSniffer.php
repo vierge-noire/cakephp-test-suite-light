@@ -16,6 +16,7 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 use Cake\Database\Exception;
 use Cake\Datasource\ConnectionInterface;
+use CakephpTestMigrator\SchemaCleaner;
 
 abstract class BaseTableSniffer
 {
@@ -183,7 +184,7 @@ abstract class BaseTableSniffer
      */
     public function fetchAllTables(): array
     {
-        return $this->getConnection()->getSchemaCollection()->listTables();
+        return (new SchemaCleaner())->listTables($this->getConnection());
     }
 
     /**
