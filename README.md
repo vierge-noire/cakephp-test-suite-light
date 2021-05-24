@@ -57,13 +57,13 @@ Here is the only step performed by the Fixture Factories Fixture Manager, and ho
 The Fixture Manager truncates the dirty tables at the beginning of each test. This is the only action performed.
 
 Dirty tables are tables on which the primary key has been incremented at least one. The detection of dirty tables is made
-by SQL queries. These are called `TableSniffers` and there are located in the `src/TestSuite/Sniffer` folder
+with an SQL query by dedicated classes. These are called `TableSniffers` and are located in the `src/TestSuite/Sniffer` folder
  of the package. These are provided for:
 * Sqlite
 * MySQL
 * Postgres
 
-If you use a different database engine, you will have to provide your own. It should extend
+If you use a different database engine, you may provide your own. It should extend
 the `BaseTableSniffer` class.
 
 You should then map in your `config/app.php` file the driver to
