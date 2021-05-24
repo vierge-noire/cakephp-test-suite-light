@@ -15,8 +15,6 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
-use CakephpTestSuiteLight\FixtureInjector;
-use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\SkipTablesTruncation;
 use TestApp\Model\Table\CountriesTable;
 
@@ -25,29 +23,25 @@ class FixtureInjectorSkipTruncationTest extends TestCase
     use SkipTablesTruncation;
 
     /**
-     * @var FixtureManager
-     */
-    public $FixtureManager;
-
-    /**
      * @var CountriesTable
      */
     public $Countries;
 
     /**
-     * Makes sure that the country table starts empty
+     * @var int
+     */
+    public static $nInitialCities;
+
+    /**
+     * Get the original number of countries
      */
     public static function setUpBeforeClass()
     {
-        TableRegistry::getTableLocator()->get('Countries')->deleteAll(['1 = 1']);
+        self::$nInitialCities = TableRegistry::getTableLocator()->get('Countries')->find()->count();
     }
 
     public function setUp()
     {
-        $this->FixtureManager = new FixtureInjector(
-            $this->createMock(FixtureManager::class)
-        );
-
         $this->Countries = TableRegistry::getTableLocator()->get('Countries');
     }
 
@@ -71,6 +65,6 @@ class FixtureInjectorSkipTruncationTest extends TestCase
     {
         $country = $this->Countries->newEntity(['name' => 'foo']);
         $this->Countries->saveOrFail($country);
-        $this->assertSame($expected, $this->Countries->find()->count());
+        $this->assertSame($expected + self::$nInitialCities, $this->Countries->find()->count());
     }
 }
