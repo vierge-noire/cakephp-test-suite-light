@@ -28,6 +28,9 @@ Between each test, the package will truncate all the test tables that have been 
 
 The fixtures will be created in the test database(s) defined in your [configuration](https://book.cakephp.org/4/en/development/testing.html#test-database-setup).
 
+***Important: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
+Only one listener is required, which is the one described in the section *Installation*.
+
 ### Ignoring connections
 
 The package will empty the tables found in all test databases. If you wish to ignore a given connection, you may 
@@ -128,9 +131,6 @@ With the help of your IDE, you can easily order the results and track the slow t
 Not the that the statistic tool does not perform any query in the database. It uses information 
 that is being gathered regardless of its actvation. It has no significant impact on the
 overall speed of your tests. 
-
-***Note: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
-Only one listener is required, which is the one described in the section *Installation*.
 
 ## Authors
 * Juan Pablo Ramirez
