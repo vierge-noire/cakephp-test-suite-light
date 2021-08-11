@@ -128,7 +128,7 @@ The statistics will be store after each suite in `tmp/test_suite_light/test_suit
 
 With the help of your IDE, you can easily order the results and track the slow tests, and improve their respective performance.
 
-Not the that the statistic tool does not perform any query in the database. It uses information 
+Note that the statistic tool does not perform any query in the database. It uses information 
 that is being gathered regardless of its actvation. It has no significant impact on the
 overall speed of your tests. 
 
