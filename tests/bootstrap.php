@@ -165,7 +165,7 @@ ConnectionManager::setConfig('test', $dbConnection);
 
 // This connection is meant to be ignored
 $dummyConnection = $dbConnection;
-$dummyConnection['driver'] = 'Foo';
+$dummyConnection['driver'] = 'Sqlite';
 $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
@@ -210,4 +210,4 @@ if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')-
 }
 
 // Run migrations
-Migrator::migrate([], true);
+Migrator::migrate([], ['verbose' => true]);

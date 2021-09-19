@@ -22,6 +22,7 @@
     "vierge-noire/cakephp-test-migrator": "^2.5"
   },
   "require-dev": {
+    "cakephp/migrations": "^3.0",
     "josegonzalez/dotenv": "dev-master",
     "phpunit/phpunit": "^8.0"
   },
