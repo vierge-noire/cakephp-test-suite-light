@@ -10,7 +10,7 @@ export DB_DRIVER=$DRIVER
 #######################
 ./vendor/bin/phpunit
 
-#######################
+#### DEPRECATED #####
 #### Tests with temporary sniffers
 #### Skip MySQL
 #######################
@@ -18,12 +18,4 @@ if [ $DRIVER != 'Mysql' ]; then
   export SNIFFERS_IN_TEMP_MODE="true"
   ./vendor/bin/phpunit
 fi
-
-#### DEPRECATED #####
-# Run the tests using
-# non-triggered based sniffers
-#####################
-export TABLE_SNIFFER="CakephpTestSuiteLight\Sniffer\\${DRIVER}TableSniffer"
-export USE_NON_TRIGGERED_BASED_SNIFFERS="true"
-./vendor/bin/phpunit
 
