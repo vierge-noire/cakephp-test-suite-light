@@ -23,7 +23,7 @@ jobs:
         exclude:
           # excludes composer lowest on mysql
           - db-type: mysql
-            composer-type: lowest
+            php-version: '7.2'
 
     name: PHP ${{ matrix.php-version }} & ${{ matrix.db-type }} & ${{ matrix.composer-type }}
 
