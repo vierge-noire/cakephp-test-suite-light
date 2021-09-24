@@ -17,13 +17,13 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
+use Cake\TestSuite\Fixture\SchemaCleaner;
 use Cake\TestSuite\TestCase;
-use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\SchemaCleaner;
-use CakephpTestSuiteLight\FixtureManager;
+use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
+use Migrations\Migrations;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\CountriesTable;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -32,6 +32,7 @@ use TestApp\Test\Fixture\CountriesFixture;
 class TableSnifferDropTablesTest extends TestCase
 {
     use InsertTestDataTrait;
+    use TruncateDirtyTables;
 
     public $fixtures = [
         // The order here is important
@@ -45,11 +46,6 @@ class TableSnifferDropTablesTest extends TestCase
     public $TableSniffer;
 
     /**
-     * @var FixtureManager
-     */
-    public $FixtureManager;
-
-    /**
      * @var CountriesTable
      */
     public $Countries;
@@ -61,7 +57,7 @@ class TableSnifferDropTablesTest extends TestCase
 
     public function setUp(): void
     {
-        $this->FixtureManager = new FixtureManager();
+        parent::setUp();
         $this->TableSniffer = SnifferRegistry::get('test');
         $this->Countries = TableRegistry::getTableLocator()->get('Countries');
         $this->Cities = TableRegistry::getTableLocator()->get('Cities');
@@ -69,10 +65,9 @@ class TableSnifferDropTablesTest extends TestCase
 
     public function tearDown(): void
     {
-        Migrator::migrate();
+        (new Migrations())->migrate(['connection' => 'test']);
 
         unset($this->TableSniffer);
-        unset($this->FixtureManager);
         unset($this->Countries);
         unset($this->Cities);
         ConnectionManager::drop('test_dummy_connection');
@@ -80,10 +75,6 @@ class TableSnifferDropTablesTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * After dropping all tables, only the dirty table collecting table should remain
-     * This should never be dropped
-     */
     public function testGetAllTablesAfterDroppingAll()
     {
         $this->assertSame(
@@ -95,18 +86,16 @@ class TableSnifferDropTablesTest extends TestCase
             $this->Cities->find()->count()
         );
 
-        (new SchemaCleaner)->drop('test');
+        (new SchemaCleaner())->dropTables('test');
 
         $this->assertSame([], $this->TableSniffer->fetchAllTables());
-
-        $this->FixtureManager->unload($this);
     }
 
     public function testDropWithForeignKeyCheckCities()
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();
-        (new SchemaCleaner)->drop(
+        (new SchemaCleaner)->dropTables(
             $this->TableSniffer->getConnection()->configName()
         );
 
@@ -118,7 +107,7 @@ class TableSnifferDropTablesTest extends TestCase
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();    // This will create a country too
-        (new SchemaCleaner)->drop(
+        (new SchemaCleaner)->dropTables(
             $this->TableSniffer->getConnection()->configName()
         );
 

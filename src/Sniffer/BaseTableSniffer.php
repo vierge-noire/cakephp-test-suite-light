@@ -16,7 +16,6 @@ namespace CakephpTestSuiteLight\Sniffer;
 
 use Cake\Database\Exception;
 use Cake\Datasource\ConnectionInterface;
-use CakephpTestMigrator\SchemaCleaner;
 
 abstract class BaseTableSniffer
 {
@@ -89,7 +88,6 @@ abstract class BaseTableSniffer
 
     /**
      * Stop spying
-     * @deprecated shutdowm will not be supported from 3.0 on.
      * @return void
      */
     public function shutdown(): void
@@ -99,7 +97,6 @@ abstract class BaseTableSniffer
      * Stop spying and restart
      * Useful if the schema or the
      * dirty table collector changed
-     * @deprecated the schema changes are not handled anymore by this package.
      * @return void
      */
     public function restart(): void
@@ -116,7 +113,6 @@ abstract class BaseTableSniffer
      * @param string $query
      *
      * @return array
-     * @deprecated queries should be fetched using the CakePHP native tools.
      */
     public function fetchQuery(string $query): array
     {
@@ -184,15 +180,6 @@ abstract class BaseTableSniffer
      */
     public function fetchAllTables(): array
     {
-        return (new SchemaCleaner())->listTables($this->getConnection());
-    }
-
-    /**
-     * Checks if the present class implements triggers
-     * @return bool
-     */
-    public function implementsTriggers(): bool
-    {
-        return $this instanceof BaseTriggerBasedTableSniffer;
+        return $this->getConnection()->getSchemaCollection()->listTables();
     }
 }

@@ -14,20 +14,15 @@ declare(strict_types=1);
 
 use Cake\Cache\Cache;
 use Cake\Chronos\Chronos;
+use Cake\Console\ConsoleIo;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\Log\Log;
+use Cake\TestSuite\Fixture\SchemaCleaner;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
-use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\SchemaCleaner;
-use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
-use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
-
-# For testing purpose, initiate the FixtureManager first
-# This is not required.
-new FixtureManager();
+use Migrations\TestSuite\Migrator;
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
@@ -64,10 +59,6 @@ define('CONFIG', TEST_APP . 'config' . DS);
 // phpcs:enable
 
 require_once CORE_PATH . 'config/bootstrap.php';
-
-# For testing purpose, initiate the FixtureManager first
-# This is not required.
-new FixtureManager();
 
 date_default_timezone_set('UTC');
 mb_internal_encoding('UTF-8');
@@ -170,7 +161,7 @@ $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 if (getenv('SNIFFERS_IN_TEMP_MODE')) {
-    (new SchemaCleaner)->drop('test');
+    (new SchemaCleaner())->dropTables('test');
 }
 
 Configure::write('Session', [
@@ -205,9 +196,5 @@ Security::setSalt('a-long-but-not-random-value');
 
 Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
-if (getenv('USE_NON_TRIGGERED_BASED_SNIFFERS') && !SnifferRegistry::get('test')->implementsTriggers()) {
-    (new SchemaCleaner)->drop('test');
-}
-
 // Run migrations
-Migrator::migrate([], true);
+(new Migrator(['outputLevel' => ConsoleIo::VERBOSE]))->run();

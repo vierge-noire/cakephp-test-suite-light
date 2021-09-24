@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestSuite;
  *
  * Class FixtureInjector
  * @package CakephpTestSuiteLight
+ * @deprecated Use the TriggerStrategy
  */
 class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
 {

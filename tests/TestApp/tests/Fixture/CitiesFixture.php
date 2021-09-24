@@ -14,42 +14,14 @@ declare(strict_types=1);
 namespace TestApp\Test\Fixture;
 
 use Cake\TestSuite\Fixture\TestFixture;
-use CakephpTestSuiteLight\Test\TestUtil;
 
 class CitiesFixture extends TestFixture
 {
-
-    /**
-     * @deprecated This attribute is not considered anymore
-     * The schema is maintained by the migrations exclusively
-     * @var array
-     */
-    public $fields = [
-        'id' => ['type' => 'integer'],
-        'name' => ['type' => 'string', 'length' => 255, 'null' => false],
-        'country_id' => ['type' => 'integer'],
-        'created' => 'datetime',
-        'modified' => 'datetime',
-        '_indexes' => [
-            'country_id' => ['type' => 'index', 'columns' => ['country_id'], 'length' => []],
-        ],
-        '_constraints' => [
-            'primary' => ['type' => 'primary', 'columns' => ['id']],
-            'country_id' => [
-                'type' => 'foreign',
-                'references' => ['countries', 'id'],
-                'update' => 'restrict',
-                'delete' => 'restrict',
-                'columns' => ['country_id'],
-            ],
-        ]
-    ];
-
     public function init(): void
     {
         $this->records = [
             [
-                'uuid_primary_key' => TestUtil::makeUuid(),
+                'uuid_primary_key' => '123e4567-e89b-12d3-a456-555723848771',
                 'name' => 'First City',
                 'country_id' => 1,
                 'created' => date('Y-m-d H:i:s'),

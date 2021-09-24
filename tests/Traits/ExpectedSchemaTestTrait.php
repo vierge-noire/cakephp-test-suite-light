@@ -20,12 +20,20 @@ trait ExpectedSchemaTestTrait
      *
      * @return string[]
      */
-    private function allExpectedTables(): array
+    protected function getAllTables(): array
     {
         return [
             'cities',
             'countries',
             '123456789_123456789_123456789_123456789_123456789_123456789',
+        ];
+    }
+
+    protected function getAllDirtyTables(): array
+    {
+        return [
+            'cities',
+            'countries',
         ];
     }
 

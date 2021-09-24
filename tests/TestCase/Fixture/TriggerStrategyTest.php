@@ -11,23 +11,26 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace CakephpTestSuiteLight\Test\TestCase;
+namespace CakephpTestSuiteLight\Test\TestCase\Fixture;
 
 
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
-use CakephpTestSuiteLight\FixtureManager;
+use CakephpTestSuiteLight\Fixture\TriggerStrategy;
+use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use TestApp\Model\Table\CountriesTable;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
 
-class FixtureManagerTest extends TestCase
+class TriggerStrategyTest extends TestCase
 {
+    use TruncateDirtyTables;
+
     /**
-     * @var FixtureManager
+     * @var TriggerStrategy
      */
-    public $FixtureManager;
+    public $triggerStrategy;
 
     /**
      * @var CountriesTable
@@ -43,14 +46,14 @@ class FixtureManagerTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->FixtureManager = new FixtureManager();
+        $this->triggerStrategy = new TriggerStrategy();
         $this->Countries = TableRegistry::getTableLocator()->get('Countries');
     }
 
     public function tearDown(): void
     {
         parent::tearDown();
-        unset($this->FixtureManager);
+        unset($this->triggerStrategy);
         unset($this->Countries);
     }
 
@@ -76,7 +79,7 @@ class FixtureManagerTest extends TestCase
             $this->assertEquals(
                 1,
                 $Table->find()->count(),
-                'Make sure that both tables were created by fixture.'
+                'Make sure that both tables were created by fixtures.'
             );
         }
     }
@@ -96,8 +99,8 @@ class FixtureManagerTest extends TestCase
 
     public function testFetchActiveConnections()
     {
-        $this->FixtureManager->fetchActiveConnections();
-        $connections = $this->FixtureManager->getActiveConnections();
+        $this->triggerStrategy->fetchActiveConnections();
+        $connections = $this->triggerStrategy->getActiveConnections();
 
         $this->assertSame(1, count($connections));
         $this->assertSame(true, in_array('test', $connections));
@@ -107,23 +110,23 @@ class FixtureManagerTest extends TestCase
     {
         $ignored = 'FooConnection';
 
-        $act = $this->FixtureManager->skipConnection($ignored, [$ignored]);
+        $act = $this->triggerStrategy->skipConnection($ignored, [$ignored]);
         $this->assertSame(true, $act);
 
-        $act = $this->FixtureManager->skipConnection('test', [$ignored]);
+        $act = $this->triggerStrategy->skipConnection('test', [$ignored]);
         $this->assertSame(false, $act);
 
-        $act = $this->FixtureManager->skipConnection('testconnection', [$ignored]);
+        $act = $this->triggerStrategy->skipConnection('testconnection', [$ignored]);
         $this->assertSame(true, $act);
 
-        $act = $this->FixtureManager->skipConnection('test_connection', [$ignored]);
+        $act = $this->triggerStrategy->skipConnection('test_connection', [$ignored]);
         $this->assertSame(false, $act);
 
         $connectionName = 'test_ConnectionToBeIgnored';
         $testConfig = ConnectionManager::getConfig('test');
         $testConfig['skipInTestSuiteLight'] = true;
         ConnectionManager::setConfig($connectionName, $testConfig);
-        $act = $this->FixtureManager->skipConnection($connectionName, [$ignored]);
+        $act = $this->triggerStrategy->skipConnection($connectionName, [$ignored]);
         $this->assertSame(true, $act);
         ConnectionManager::drop($connectionName);
     }
