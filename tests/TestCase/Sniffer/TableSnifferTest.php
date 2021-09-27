@@ -44,7 +44,7 @@ class TableSnifferTest extends TestCase
     ];
 
     /**
-     * @var BaseTableSniffer
+     * @var BaseTriggerBasedTableSniffer
      */
     public $TableSniffer;
 
@@ -146,13 +146,13 @@ class TableSnifferTest extends TestCase
         $this->assertArraysHaveSameContent($this->allExpectedTriggers(), $this->TableSniffer->getTriggers());
     }
 
+    /**
+     * Expect an exception since triggers already exist
+     */
     public function testCreateTriggers()
     {
         $this->expectException(\PDOException::class);
         $this->TableSniffer->createTriggers();
-
-        $triggers = $this->TableSniffer->getTriggers();
-        $this->assertArraysHaveSameContent($this->allExpectedTriggers(), $triggers);
     }
 
     public function testSwitchMode()
@@ -176,7 +176,7 @@ class TableSnifferTest extends TestCase
         (new Migrations())->migrate(['connection' => 'test']);
 
         $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
-        $this->assertSame(false, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
+        $this->assertFalse(in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
 
         $this->TableSniffer->init();
 
