@@ -17,7 +17,7 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
-use Cake\TestSuite\Fixture\SchemaCleaner;
+use Cake\TestSuite\ConnectionHelper;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
@@ -86,7 +86,7 @@ class TableSnifferDropTablesTest extends TestCase
             $this->Cities->find()->count()
         );
 
-        (new SchemaCleaner())->dropTables('test');
+        (new ConnectionHelper())->dropTables('test');
 
         $this->assertSame([], $this->TableSniffer->fetchAllTables());
     }
@@ -95,7 +95,7 @@ class TableSnifferDropTablesTest extends TestCase
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();
-        (new SchemaCleaner)->dropTables(
+        (new ConnectionHelper())->dropTables(
             $this->TableSniffer->getConnection()->configName()
         );
 
@@ -107,7 +107,7 @@ class TableSnifferDropTablesTest extends TestCase
     {
         $this->activateForeignKeysOnSqlite();
         $this->createCity();    // This will create a country too
-        (new SchemaCleaner)->dropTables(
+        (new ConnectionHelper())->dropTables(
             $this->TableSniffer->getConnection()->configName()
         );
 

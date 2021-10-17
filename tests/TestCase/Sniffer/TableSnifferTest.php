@@ -15,7 +15,7 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
 use Cake\Datasource\ConnectionManager;
-use Cake\TestSuite\Fixture\SchemaCleaner;
+use Cake\TestSuite\ConnectionHelper;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
@@ -172,7 +172,7 @@ class TableSnifferTest extends TestCase
 
     public function testRecreateDirtyTableCollectorAfterDrop()
     {
-        (new SchemaCleaner())->dropTables('test');
+        (new ConnectionHelper())->dropTables('test');
         (new Migrations())->migrate(['connection' => 'test']);
 
         $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);

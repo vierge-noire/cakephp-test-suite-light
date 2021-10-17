@@ -18,7 +18,7 @@ use Cake\Console\ConsoleIo;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\Log\Log;
-use Cake\TestSuite\Fixture\SchemaCleaner;
+use Cake\TestSuite\ConnectionHelper;
 use Cake\Utility\Inflector;
 use Cake\Utility\Security;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
@@ -161,7 +161,7 @@ $dummyConnection['skipInTestSuiteLight'] = true;
 ConnectionManager::setConfig('test_dummy', $dummyConnection);
 
 if (getenv('SNIFFERS_IN_TEMP_MODE')) {
-    (new SchemaCleaner())->dropTables('test');
+    (new ConnectionHelper())->dropTables('test');
 }
 
 Configure::write('Session', [
