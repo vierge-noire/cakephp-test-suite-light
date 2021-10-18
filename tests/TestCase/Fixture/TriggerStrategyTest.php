@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Test\TestCase\Fixture;
 
 
+use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
@@ -97,36 +98,28 @@ class TriggerStrategyTest extends TestCase
         $this->assertSame(true, ConnectionManager::getConfig('test_dummy')['skipInTestSuiteLight']);
     }
 
-    public function testFetchActiveConnections()
-    {
-        $this->triggerStrategy->fetchActiveConnections();
-        $connections = $this->triggerStrategy->getActiveConnections();
-
-        $this->assertSame(1, count($connections));
-        $this->assertSame(true, in_array('test', $connections));
-    }
-
     public function testSkipIgnoredConnection()
     {
         $ignored = 'FooConnection';
+        Configure::write(TriggerStrategy::TEST_SUITE_LIGHT_IGNORED_CONNECTIONS_CONFIG_KEY, [$ignored]);
 
-        $act = $this->triggerStrategy->skipConnection($ignored, [$ignored]);
+        $act = $this->triggerStrategy->isConnectionTruncationSkipped($ignored);
         $this->assertSame(true, $act);
 
-        $act = $this->triggerStrategy->skipConnection('test', [$ignored]);
+        $act = $this->triggerStrategy->isConnectionTruncationSkipped('test');
         $this->assertSame(false, $act);
 
-        $act = $this->triggerStrategy->skipConnection('testconnection', [$ignored]);
+        $act = $this->triggerStrategy->isConnectionTruncationSkipped('testconnection');
         $this->assertSame(true, $act);
 
-        $act = $this->triggerStrategy->skipConnection('test_connection', [$ignored]);
+        $act = $this->triggerStrategy->isConnectionTruncationSkipped('test_connection');
         $this->assertSame(false, $act);
 
         $connectionName = 'test_ConnectionToBeIgnored';
         $testConfig = ConnectionManager::getConfig('test');
         $testConfig['skipInTestSuiteLight'] = true;
         ConnectionManager::setConfig($connectionName, $testConfig);
-        $act = $this->triggerStrategy->skipConnection($connectionName, [$ignored]);
+        $act = $this->triggerStrategy->isConnectionTruncationSkipped($connectionName);
         $this->assertSame(true, $act);
         ConnectionManager::drop($connectionName);
     }

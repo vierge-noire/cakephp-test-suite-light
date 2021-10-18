@@ -14,24 +14,27 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Fixture;
 
 use Cake\Core\Configure;
-use Cake\Datasource\ConnectionInterface;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\Fixture\FixtureHelper;
 use Cake\TestSuite\Fixture\FixtureStrategyInterface;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 
 /**
- * Fixture strategy that wraps fixtures in a transaction that is rolled back
- * after each test.
+ * Fixture strategy that cleans up tables based on triggers detecting any
+ * inserts in any tables.
  *
- * Any test that calls Connection::rollback(true) will break this strategy.
+ * At the beginning of each test, the tables previously touched are cleaned.
+ * At the end of the test, nothing is performed. It is therefore possible
+ * to work with transactions, break them, and you may also query your test
+ * database to ensure the output of a given test matches expectations.
+ *
  */
 class TriggerStrategy implements FixtureStrategyInterface
 {
     /**
-     * @var array|null
+     * Configuration key to ignore the truncation of an array of connections
      */
-    protected $activeConnections;
+    public const TEST_SUITE_LIGHT_IGNORED_CONNECTIONS_CONFIG_KEY = 'TestSuiteLightIgnoredConnections';
 
     /**
      * @inheritDoc
@@ -53,15 +56,6 @@ class TriggerStrategy implements FixtureStrategyInterface
     }
 
     /**
-     * @param string $name
-     * @return ConnectionInterface
-     */
-    public function getConnection($name = 'test')
-    {
-        return ConnectionManager::get($name);
-    }
-
-    /**
      * Scan all test connections and truncate the dirty tables
      * @return void
      */
@@ -73,13 +67,15 @@ class TriggerStrategy implements FixtureStrategyInterface
     }
 
     /**
-     * @param string $connectionName
-     * @param array  $ignoredConnections
+     * Cheks if a connection should be truncated or not.
      *
+     * @param string $connectionName
      * @return bool
      */
-    public function skipConnection(string $connectionName, array $ignoredConnections): bool
+    public function isConnectionTruncationSkipped(string $connectionName): bool
     {
+        $ignoredConnections = Configure::read(self::TEST_SUITE_LIGHT_IGNORED_CONNECTIONS_CONFIG_KEY, []);
+
         // CakePHP 4 solves a DebugKit issue by creating an Sqlite connection
         // in tests/bootstrap.php. This connection should be ignored.
         if ($connectionName === 'test_debug_kit' || in_array($connectionName, $ignoredConnections)) {
@@ -98,30 +94,18 @@ class TriggerStrategy implements FixtureStrategyInterface
     }
 
     /**
-     * Initialize all connections used by the manager
+     * Get all connections used by the manager
      * @return array
      */
-    public function fetchActiveConnections(): array
+    protected function getActiveConnections(): array
     {
         $connections = ConnectionManager::configured();
-        $ignoredConnections = Configure::read('TestSuiteLightIgnoredConnections', []);
         foreach ($connections as $i => $connectionName) {
-            if ($this->skipConnection($connectionName, $ignoredConnections)) {
+            if ($this->isConnectionTruncationSkipped($connectionName)) {
                 unset($connections[$i]);
             }
         }
-        return $this->activeConnections = $connections;
-    }
 
-    /**
-     * If not yet set, fetch the active connections
-     * Those are the connections that are neither ignored,
-     * nor irrelevant (debug_kit, non-test DBs etc...)
-     * @return array
-     * @throws \RuntimeException
-     */
-    public function getActiveConnections(): array
-    {
-        return $this->activeConnections ?? $this->fetchActiveConnections();
+        return $connections;
     }
 }
