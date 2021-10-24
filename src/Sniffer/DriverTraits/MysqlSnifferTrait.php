@@ -20,7 +20,6 @@ use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 /**
  * Trait MysqlSnifferTrait
  * @package CakephpTestSuiteLight\Sniffer\DriverTraits
- * @deprecated Sniffers are not queried anymore.
  */
 trait MysqlSnifferTrait
 {

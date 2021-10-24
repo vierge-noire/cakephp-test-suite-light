@@ -15,12 +15,17 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
+use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use TestApp\Model\Table\CountriesTable;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
 
 class CakeFixturesTest extends TestCase
 {
+    use InsertTestDataTrait;
+    use TruncateDirtyTables;
+
     /**
      * @var CountriesTable
      */
@@ -40,6 +45,7 @@ class CakeFixturesTest extends TestCase
 
     public function tearDown(): void
     {
+        parent::tearDown();
         unset($this->Countries);
     }
 
@@ -57,9 +63,7 @@ class CakeFixturesTest extends TestCase
      */
     public function testCreateCountry()
     {
-        $country = $this->Countries->newEntity(['name' => 'Foo']);
-        $this->Countries->saveOrFail($country);
-
+        $this->createCountry();
         $countries = $this->Countries->find();
         $this->assertEquals(2, $countries->count());
     }

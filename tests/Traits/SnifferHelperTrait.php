@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Test\Traits;
 
+use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 
 trait SnifferHelperTrait
@@ -20,5 +21,12 @@ trait SnifferHelperTrait
     private function driverIs(string $driver): bool
     {
         return ConnectionManager::getConfig('test')['driver'] === 'Cake\Database\Driver\\' . $driver;
+    }
+
+    private function activateForeignKeysOnSqlite() {
+        $connection = ConnectionManager::get('test');
+        if ($connection->config()['driver'] === Sqlite::class) {
+            $connection->execute('PRAGMA foreign_keys = ON;' );
+        }
     }
 }

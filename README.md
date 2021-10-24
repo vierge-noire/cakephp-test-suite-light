@@ -11,6 +11,10 @@ composer require --dev vierge-noire/cakephp-test-suite-light "^2.0"
 
 ### Listeners
 
+For CakePHP ^4.3 application, no additional listener is required. See the doc [here](https://book.cakephp.org/4.next/en/appendices/fixture-upgrade.html#fixture-upgrade). 
+
+Prior to CakePHP 4.3:
+
 Make sure you *replace* the native CakePHP listener by the following one inside your `phpunit.xml` (or `phpunit.xml.dist`) config file, per default located in the root folder of your application:
 
 ```

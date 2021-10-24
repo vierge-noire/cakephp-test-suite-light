@@ -48,8 +48,6 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTriggers(): void
     {
-        $triggerPrefix = self::TRIGGER_PREFIX;
-
         $stmts = "";
         foreach ($this->getAllTablesExceptPhinxlogsAndCollector(true) as $table) {
             $stmts .= "       

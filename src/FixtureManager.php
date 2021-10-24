@@ -25,6 +25,7 @@ use function strpos;
 /**
  * Class FixtureManager
  * @package CakephpTestSuiteLight
+ * @deprecated Use the TriggerStrategy
  */
 class FixtureManager extends BaseFixtureManager
 {

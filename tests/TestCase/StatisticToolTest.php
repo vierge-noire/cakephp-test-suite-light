@@ -16,6 +16,7 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use CakephpTestSuiteLight\FixtureManager;
 use CakephpTestSuiteLight\StatisticTool;
 use TestApp\Test\Fixture\CitiesFixture;
@@ -23,6 +24,8 @@ use TestApp\Test\Fixture\CountriesFixture;
 
 class StatisticToolTest extends TestCase
 {
+    use TruncateDirtyTables;
+
     /**
      * @var StatisticTool
      */
@@ -34,10 +37,9 @@ class StatisticToolTest extends TestCase
         CitiesFixture::class,
     ];
 
-    public $autoFixtures = false;
-
     public function setUp(): void
     {
+        parent::setUp();
         $this->StatisticTool = new StatisticTool(
             new FixtureManager(),
             true
@@ -46,6 +48,7 @@ class StatisticToolTest extends TestCase
 
     public function tearDown(): void
     {
+        parent::tearDown();
         unset($this->StatisticTool);
     }
 
@@ -60,7 +63,7 @@ class StatisticToolTest extends TestCase
         // Arrange
         $this->StatisticTool->startsTestTime();
         $this->StatisticTool->startsLoadingFixturesTime();
-        $this->loadFixtures();
+        usleep(1000);
         $this->StatisticTool->stopsLoadingFixturesTime();
         $this->StatisticTool->stopsTestTime();
 

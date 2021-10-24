@@ -28,6 +28,7 @@ class FixtureInjectorTest extends TestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         $this->FixtureInjector = new FixtureInjector(new FixtureManager(), true);
     }
 

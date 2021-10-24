@@ -19,6 +19,7 @@ use Cake\Database\Driver\Postgres;
 use Cake\Database\Driver\Sqlite;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
@@ -28,6 +29,8 @@ use PHPUnit\Framework\Exception;
 
 class SnifferRegistryTest extends TestCase
 {
+    use TruncateDirtyTables;
+
     public function dataProviderTestLoadDefaultSniffer()
     {
         return [
@@ -70,7 +73,7 @@ class SnifferRegistryTest extends TestCase
     {
         $tables = SnifferRegistry::get('test')->fetchAllTables();
         $collectorIsVisible = in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables);
-        if (getenv('SNIFFERS_IN_TEMP_MODE') || !SnifferRegistry::get('test')->implementsTriggers()) {
+        if (getenv('SNIFFERS_IN_TEMP_MODE')) {
             $expected = false;
         } else {
             $expected = true;

@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 
 use Cake\Datasource\ConnectionManager;
-use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use Migrations\AbstractMigration;
 
 class InitialMigration extends AbstractMigration
@@ -23,10 +22,8 @@ class InitialMigration extends AbstractMigration
      */
     public function up(): void
     {
-        $supportsUuid = SnifferRegistry::get('test')->implementsTriggers();
-
         // Sqlite is not happy with the composite and/or uuid concept
-        if (!$supportsUuid || ConnectionManager::getConfig('test')['driver'] === 'Cake\Database\Driver\Sqlite') {
+        if (ConnectionManager::getConfig('test')['driver'] === 'Cake\Database\Driver\Sqlite') {
             $citiesTable = $this->table('cities');
         } else {
             $citiesTable = $this->table('cities', ['id' => false, 'primary_key' => ['uuid_primary_key', 'id_primary_key']])

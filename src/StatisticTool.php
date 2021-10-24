@@ -15,8 +15,8 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight;
 
 use Cake\Datasource\ConnectionManager;
-use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
+use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use PHPUnit\Framework\Test;
 
 class StatisticTool

@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestSuite;
  *
  * Class FixtureInjector
  * @package CakephpTestSuiteLight
+ * @deprecated Use the TriggerStrategy
  */
 class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
 {
@@ -74,9 +75,6 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
         // Load CakePHP fixtures
         parent::startTest($test);
         $this->statisticTool->stopsLoadingFixturesTime();
-
-        // Run the seeds of your DB
-//        $this->rollbackAndMigrateIfRequired();
     }
 
     /**
@@ -109,34 +107,11 @@ class FixtureInjector extends \Cake\TestSuite\Fixture\FixtureInjector
      * does not occur between tests
      * @param Test $test
      * @return bool
+     * @deprecated use the TruncateDirtyTables trait
+     * @see \CakephpTestSuiteLight\Fixture\TruncateDirtyTables
      */
     public function skipTablesTruncation(Test $test): bool
     {
         return isset($test->skipTablesTruncation) ? $test->skipTablesTruncation : false;
     }
-
-    /**
-     * Rollback the migrations defined in the config, and run them again
-     * This can be useful if certain seed needs to be performed by migration
-     * and should be recreated before each test
-     *
-     * @todo  TODO: the package aims at avoiding migrations
-     * in its dependency. Let's think about a way to have this
-     * done.
-     */
-//    public function rollbackAndMigrateIfRequired()
-//    {
-//        $configs = Configure::read('TestFixtureMarkedNonMigrated', []);
-//
-//        if (!empty($configs)) {
-//            if (!isset($configs[0])) {
-//                $configs = [$configs];
-//            }
-//            $migrations = new Migrations();
-//            foreach ($configs as $config) {
-//                $migrations->rollback($config);
-//                $migrations->migrate($config);
-//            }
-//        }
-//    }
 }
