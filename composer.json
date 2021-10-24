@@ -17,14 +17,13 @@
   "minimum-stability": "dev",
   "require": {
     "php": ">=7.2",
-    "cakephp/cakephp": "^4.0",
-    "ext-pdo": "*",
-    "vierge-noire/cakephp-test-migrator": "^2.3"
+    "cakephp/cakephp": "^4.3",
+    "ext-pdo": "*"
   },
   "require-dev": {
-    "cakephp/migrations": "^3.0",
+    "cakephp/migrations": "^3.2",
     "josegonzalez/dotenv": "dev-master",
-    "phpunit/phpunit": "^8.0"
+    "phpunit/phpunit": "^8.5 || ^9.3"
   },
   "autoload": {
     "psr-4": {

@@ -43,14 +43,12 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
 
     /**
      * Get triggers relative to the database dirty table collector
-     * @deprecated triggers are not dropped and do not need to be fetched.
      * @return array
      */
     abstract public function getTriggers(): array;
 
     /**
      * Drop triggers relative to the database dirty table collector
-     * @deprecated Triggers will not be dropped any more. The present package expects a clean schema.
      * @return void
      */
     abstract public function dropTriggers();
@@ -94,7 +92,11 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     }
 
     /**
-     * @inheritDoc
+     * Get the sniffer started
+     * Typically create the dirty table collector
+     * Truncate all tables
+     * Create the spying triggers
+     * @return void
      */
     public function init(): void
     {
@@ -184,7 +186,6 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
 
     /**
      * Drop the table gathering the dirty tables
-     * @deprecated The dropping is handled by the schema manager.
      * @return void
      */
     public function dropDirtyTableCollector()
@@ -233,9 +234,6 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      */
     public function getMode(): string
     {
-        if (!$this->implementsTriggers()) {
-            return '';
-        }
         return $this->mode;
     }
 

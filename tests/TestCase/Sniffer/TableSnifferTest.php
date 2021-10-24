@@ -15,10 +15,9 @@ namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
 
 use Cake\Datasource\ConnectionManager;
+use Cake\TestSuite\ConnectionHelper;
 use Cake\TestSuite\TestCase;
-use CakephpTestMigrator\Migrator;
-use CakephpTestMigrator\SchemaCleaner;
-use CakephpTestSuiteLight\FixtureManager;
+use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
 use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
@@ -26,6 +25,7 @@ use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use CakephpTestSuiteLight\Test\Traits\ExpectedSchemaTestTrait;
 use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use CakephpTestSuiteLight\Test\Traits\SnifferHelperTrait;
+use Migrations\Migrations;
 use TestApp\Test\Fixture\CitiesFixture;
 use TestApp\Test\Fixture\CountriesFixture;
 
@@ -35,6 +35,7 @@ class TableSnifferTest extends TestCase
     use ExpectedSchemaTestTrait;
     use InsertTestDataTrait;
     use SnifferHelperTrait;
+    use TruncateDirtyTables;
 
     public $fixtures = [
         // The order here is important
@@ -42,20 +43,14 @@ class TableSnifferTest extends TestCase
         CitiesFixture::class,
     ];
 
-    public $autoFixtures = false;
-
     /**
-     * @var BaseTableSniffer
+     * @var BaseTriggerBasedTableSniffer
      */
     public $TableSniffer;
 
-    /**
-     * @var FixtureManager
-     */
-    public $FixtureManager;
-
     public function setUp(): void
     {
+        parent::setUp();
         $this->TableSniffer = SnifferRegistry::get('test');
     }
 
@@ -75,73 +70,12 @@ class TableSnifferTest extends TestCase
         ConnectionManager::setConfig('test_dummy_connection', $config);
     }
 
-    public function dataProviderOfDirtyTables()
-    {
-        return [
-//            [true],
-            [false],
-        ];
-    }
-
     /**
      * All tables should be clean before every test
-     * @dataProvider dataProviderOfDirtyTables
-     * @param bool $loadFixtures
      */
-    public function testGetDirtyTablesWithLoadFixtures(bool $loadFixtures)
+    public function testGetDirtyTables()
     {
-        if ($loadFixtures) {
-            $this->loadFixtures();
-            $expected = $this->TableSniffer->implementsTriggers() ? 3 : 2;      // Expect countries, cities, but also the dirty_table table
-        } else {
-            $expected = 0;
-        }
-        $this->assertSame($expected, count($this->TableSniffer->getDirtyTables()));
-    }
-
-    /**
-     * All tables should be clean before every test
-     * @dataProvider dataProviderOfDirtyTables
-     * @param bool $loadFixtures
-     */
-    public function testGetDirtyTablesWithLoadOneCity(bool $loadFixtures)
-    {
-        if ($loadFixtures) {
-            $this->skipIf(
-                $this->driverIs('Postgres'),
-                "Foreign key constrains on countries will lead to failed insert on Postgres."
-            );
-            $this->loadFixtures('Cities');
-            $expected = $this->TableSniffer->implementsTriggers() ? 2 : 1;      // Expect cities, but also the dirty_table table
-        } else {
-            $expected = 0;
-        }
-        $this->assertSame($expected, count($this->TableSniffer->getDirtyTables()));
-    }
-
-    /**
-     * All tables should be clean before every test
-     * @dataProvider dataProviderOfDirtyTables
-     * @param bool $loadFixtures
-     */
-    public function testGetDirtyTablesWithLoadOneCountry(bool $loadFixtures)
-    {
-        if ($loadFixtures)
-        {
-            $expected = [
-                'countries',
-            ];
-            $this->loadFixtures('Countries');
-            if ($this->TableSniffer->implementsTriggers()) {
-                if ($this->driverIs('Sqlite') && $this->TableSniffer->isInTempMode()) {
-                    $expected[] = 'temp.' . BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
-                } else {
-                    $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
-                }
-            }
-        } else {
-            $expected = [];
-        }
+        $expected = $this->getAllDirtyTables();
         $this->assertArraysHaveSameContent($expected, $this->TableSniffer->getDirtyTables());
     }
 
@@ -166,14 +100,12 @@ class TableSnifferTest extends TestCase
 
     public function testCheckTriggersAfterStart()
     {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
-
         if ($this->driverIs('Mysql')) {
             $found = $this->TableSniffer->fetchQuery('SHOW TRIGGERS');
         } elseif ($this->driverIs('Postgres')) {
             $found = $this->TableSniffer->fetchQuery('SELECT tgname FROM pg_trigger');
         } elseif ($this->driverIs('Sqlite')) {
-            if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInTempMode()) {
+            if ($this->TableSniffer->isInTempMode()) {
                 $found = $this->TableSniffer->fetchQuery('SELECT name FROM sqlite_temp_master WHERE type = "trigger"');
             } else {
                 $found = $this->TableSniffer->fetchQuery('SELECT name FROM sqlite_master WHERE type = "trigger"');
@@ -188,8 +120,8 @@ class TableSnifferTest extends TestCase
     public function testGetAllTablesExceptPhinxlogs()
     {
         $found = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
-        $expected = $this->allExpectedTables();
-        if ($this->TableSniffer->implementsTriggers() && $this->TableSniffer->isInMainMode()) {
+        $expected = $this->getAllTables();
+        if ($this->TableSniffer->isInMainMode()) {
             $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }
 
@@ -198,66 +130,33 @@ class TableSnifferTest extends TestCase
 
     public function testGetAllTablesExceptPhinxlogsAndCollector()
     {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
         $found = $this->TableSniffer->getAllTablesExceptPhinxlogsAndCollector(true);
-        $this->assertArraysHaveSameContent($this->allExpectedTables(), $found);
+        $this->assertArraysHaveSameContent($this->getAllTables(), $found);
     }
 
-    public function testMarkAllTablesAsDirtyOnEmptyDirtyTableCollector()
+    public function testMarkAllTablesAsDirty()
     {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
-
-        $dirtyTables = $this->TableSniffer->getDirtyTables();
-        $this->assertSame([], $dirtyTables);
-
         $this->TableSniffer->markAllTablesAsDirty();
-
         $dirtyTables = $this->TableSniffer->getDirtyTables();
-        $this->assertArraysHaveSameContent($this->allExpectedTables(), $dirtyTables);
-    }
-
-    public function testMarkAllTablesAsDirtyOnNotEmptyDirtyTableCollector()
-    {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
-
-        $this->createCountry();
-
-        $dirtyTables = $this->TableSniffer->getDirtyTables();
-        $this->assertArraysHaveSameContent([
-            'countries',
-        ], $dirtyTables);
-
-        $this->TableSniffer->markAllTablesAsDirty();
-
-        $dirtyTables = $this->TableSniffer->getDirtyTables();
-        $this->assertArraysHaveSameContent($this->allExpectedTables(), $dirtyTables);
+        $this->assertArraysHaveSameContent($this->getAllTables(), $dirtyTables);
     }
 
     public function testGetTriggers()
     {
-        if ($this->TableSniffer->implementsTriggers()) {
-            $expect = $this->allExpectedTriggers();
-        } else {
-            $expect = [];
-        }
-
-        $this->assertArraysHaveSameContent($expect, $this->TableSniffer->getTriggers());
+        $this->assertArraysHaveSameContent($this->allExpectedTriggers(), $this->TableSniffer->getTriggers());
     }
 
+    /**
+     * Expect an exception since triggers already exist
+     */
     public function testCreateTriggers()
     {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
-
         $this->expectException(\PDOException::class);
         $this->TableSniffer->createTriggers();
-
-        $triggers = $this->TableSniffer->getTriggers();
-        $this->assertArraysHaveSameContent($this->allExpectedTriggers(), $triggers);
     }
 
     public function testSwitchMode()
     {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
         $mode = $this->TableSniffer->getMode();
 
         foreach ([1, 2, 3] as $i) {
@@ -273,13 +172,11 @@ class TableSnifferTest extends TestCase
 
     public function testRecreateDirtyTableCollectorAfterDrop()
     {
-        $this->skipUnless($this->TableSniffer->implementsTriggers());
-
-        (new SchemaCleaner)->drop('test');
-        Migrator::migrate();
+        (new ConnectionHelper())->dropTables('test');
+        (new Migrations())->migrate(['connection' => 'test']);
 
         $tables = $this->TableSniffer->getAllTablesExceptPhinxlogs(true);
-        $this->assertSame(false, in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
+        $this->assertFalse(in_array(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR, $tables));
 
         $this->TableSniffer->init();
 

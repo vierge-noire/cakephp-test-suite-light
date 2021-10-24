@@ -11,6 +11,10 @@ composer require --dev vierge-noire/cakephp-test-suite-light "^2.0"
 
 ### Listeners
 
+For CakePHP ^4.3 application, no additional listener is required. See the doc [here](https://book.cakephp.org/4.next/en/appendices/fixture-upgrade.html#fixture-upgrade). 
+
+Prior to CakePHP 4.3:
+
 Make sure you *replace* the native CakePHP listener by the following one inside your `phpunit.xml` (or `phpunit.xml.dist`) config file, per default located in the root folder of your application:
 
 ```
@@ -31,9 +35,19 @@ The fixtures will be created in the test database(s) defined in your [configurat
 ***Important: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
 Only one listener is required, which is the one described in the section *Installation*.
 
-### Ignoring connections
+### Truncating tables
 
-The package will empty the tables found in all test databases. If you wish to ignore a given connection, you may 
+#### With CakePHP ^4.3
+Use the `CakephpTestSuiteLight\Fixture\TruncateDirtyTables` trait in a test case class
+in order to clean up the database prior to each of its tests.
+
+#### Prior to CakePHP ^4.3
+The package will empty by default the dirty tables in all test databases.
+
+If you with to ignore the truncation for a given test case, you may use the
+`CakephpTestSuiteLight\SkipTablesTruncation` trait
+
+If you wish to ignore a given connection, you may 
 provide the `skipInTestSuiteLight` key to `true` in your `config/app.php`. E.g.:  
 
 ```$xslt
@@ -82,13 +96,7 @@ In config/app.php
     ...
     'tableSniffer' => '\Your\Custom\Table\Sniffer'
 ],
-``` 
- 
-### Disabling the truncation
-
-You may wish to skip the truncation of tables between the tests. For example if you know in advance that
-your tests do not interact with the database, or if you do not mind having a dirty DB at the beginning of your tests.
-This is made at the test class level, by letting your test class using the trait `CakephpTestSuiteLight\SkipTablesTruncation`.
+```
 
 ### Temporary vs non-temporary dirty table collector
 

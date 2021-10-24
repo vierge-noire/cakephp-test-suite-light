@@ -23,7 +23,7 @@ trait InsertTestDataTrait
     {
         $Countries = TableRegistry::getTableLocator()->get('Countries');
         $country = $Countries->newEntity([
-            'name' => 'Foo',
+            'name' => 'Foo Country',
         ]);
         return $Countries->saveOrFail($country);
     }
@@ -34,7 +34,7 @@ trait InsertTestDataTrait
         $city = $Cities->newEntity([
             'uuid_primary_key' => TestUtil::makeUuid(),
             'id_primary_key' => rand(1, 99999999),
-            'name' => 'Foo',
+            'name' => 'Foo City',
             'country_id' => $this->createCountry()->id
         ]);
         return $Cities->saveOrFail($city);

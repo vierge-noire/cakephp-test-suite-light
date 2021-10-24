@@ -17,21 +17,6 @@ use Cake\TestSuite\Fixture\TestFixture;
 
 class CountriesFixture extends TestFixture
 {
-    /**
-     * @deprecated This attribute is not considered anymore
-     * The schema is maintained by the migrations exclusively
-     * @var array
-     */
-    public $fields = [
-        'id' => ['type' => 'integer'],
-        'name' => ['type' => 'string', 'length' => 255, 'null' => false],
-        'created' => 'datetime',
-        'modified' => 'datetime',
-        '_constraints' => [
-            'primary' => ['type' => 'primary', 'columns' => ['id']],
-        ]
-    ];
-
     public function init(): void
     {
         $this->records = [

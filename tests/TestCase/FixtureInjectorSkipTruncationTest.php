@@ -15,13 +15,10 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
-use CakephpTestSuiteLight\SkipTablesTruncation;
 use TestApp\Model\Table\CountriesTable;
 
 class FixtureInjectorSkipTruncationTest extends TestCase
 {
-    use SkipTablesTruncation;
-
     /**
      * @var CountriesTable
      */
@@ -42,11 +39,13 @@ class FixtureInjectorSkipTruncationTest extends TestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         $this->Countries = TableRegistry::getTableLocator()->get('Countries');
     }
 
     public function tearDown(): void
     {
+        parent::tearDown();
         unset($this->Countries);
     }
 

@@ -19,7 +19,6 @@ use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 /**
  * Trait PostgresSnifferTrait
  * @package CakephpTestSuiteLight\Sniffer\DriverTraits
- * @deprecated Sniffers are not queried anymore.
  */
 trait PostgresSnifferTrait
 {

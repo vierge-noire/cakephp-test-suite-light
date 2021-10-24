@@ -11,16 +11,21 @@ declare(strict_types=1);
  * @since         1.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-namespace CakephpTestSuiteLight;
+namespace CakephpTestSuiteLight\Fixture;
+
+use Cake\TestSuite\Fixture\FixtureStrategyInterface;
 
 /**
- * Used to enable the skipping of truncation in a test.
- * This is now handled with the TriggerStrategy
+ * Will truncate the test DBs before each test
+ * This enables the developer to query her/his test database
+ * after a test has run.
  *
- * Trait SkipTablesTruncation
- * @deprecated
+ * Trait TruncateTablesTrait
  */
-trait SkipTablesTruncation
+trait TruncateDirtyTables
 {
-    public $skipTablesTruncation = true;
+    protected function getFixtureStrategy(): FixtureStrategyInterface
+    {
+        return new TriggerStrategy();
+    }
 }
