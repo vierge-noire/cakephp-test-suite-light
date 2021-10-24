@@ -35,9 +35,19 @@ The fixtures will be created in the test database(s) defined in your [configurat
 ***Important: you should not add the [CakePHP native listener](https://book.cakephp.org/3/en/development/testing.html#phpunit-configuration)*** to your `phpunit.xml` file.
 Only one listener is required, which is the one described in the section *Installation*.
 
-### Ignoring connections
+### Truncating tables
 
-The package will empty the tables found in all test databases. If you wish to ignore a given connection, you may 
+#### With CakePHP ^4.3
+Use the `CakephpTestSuiteLight\Fixture\TruncateDirtyTables` trait in a test case class
+in order to clean up the database prior to each of its tests.
+
+#### Prior to CakePHP ^4.3
+The package will empty by default the dirty tables in all test databases.
+
+If you with to ignore the truncation for a given test case, you may use the
+`CakephpTestSuiteLight\SkipTablesTruncation` trait
+
+If you wish to ignore a given connection, you may 
 provide the `skipInTestSuiteLight` key to `true` in your `config/app.php`. E.g.:  
 
 ```$xslt
