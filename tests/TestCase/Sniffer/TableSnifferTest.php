@@ -18,7 +18,6 @@ use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\ConnectionHelper;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
-use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
@@ -86,7 +85,7 @@ class TableSnifferTest extends TestCase
     {
         $this->createNonExistentConnection();
         $sniffer = SnifferRegistry::get('test_dummy_connection');
-        $this->assertInstanceOf(BaseTableSniffer::class, $sniffer);
+        $this->assertInstanceOf(BaseTriggerBasedTableSniffer::class, $sniffer);
     }
 
     public function testImplodeSpecial()

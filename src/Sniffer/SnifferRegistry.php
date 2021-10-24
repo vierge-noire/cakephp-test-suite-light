@@ -23,15 +23,15 @@ class SnifferRegistry
     const LOGGER = 'logger';
 
     /**
-     * @var BaseTableSniffer[]
+     * @var BaseTriggerBasedTableSniffer[]
      */
     private static $sniffers = [];
 
     /**
      * @param string $connectionName
-     * @return BaseTableSniffer
+     * @return BaseTriggerBasedTableSniffer
      */
-    public static function set(string $connectionName): BaseTableSniffer
+    public static function set(string $connectionName): BaseTriggerBasedTableSniffer
     {
         $snifferName = self::getConnectionSnifferName($connectionName);
         return self::$sniffers[$connectionName] = new $snifferName(self::getConnection($connectionName));
@@ -39,9 +39,9 @@ class SnifferRegistry
 
     /**
      * @param string $connectionName
-     * @return BaseTableSniffer
+     * @return BaseTriggerBasedTableSniffer
      */
-    public static function get(string $connectionName): BaseTableSniffer
+    public static function get(string $connectionName): BaseTriggerBasedTableSniffer
     {
         if (!isset(self::$sniffers[$connectionName])) {
             self::set($connectionName);

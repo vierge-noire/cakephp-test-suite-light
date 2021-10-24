@@ -18,7 +18,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
-use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\ArrayComparerTrait;
 use CakephpTestSuiteLight\Test\Traits\ExpectedSchemaTestTrait;
@@ -36,7 +36,7 @@ class TableSnifferWithoutFixturesTest extends TestCase
     use TruncateDirtyTables;
 
     /**
-     * @var BaseTableSniffer
+     * @var BaseTriggerBasedTableSniffer
      */
     public $TableSniffer;
 

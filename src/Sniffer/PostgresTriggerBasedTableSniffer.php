@@ -81,17 +81,6 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     /**
      * @inheritDoc
      */
-    public function shutdown(): void
-    {
-        parent::shutdown();
-
-        $this->dropTriggers();
-        $this->dropDirtyTableCollector();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function createTruncateDirtyTablesProcedure(): void
     {
         $this->getConnection()->execute("

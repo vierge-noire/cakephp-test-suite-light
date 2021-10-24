@@ -13,9 +13,10 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Sniffer;
 
+use Cake\Core\Exception\CakeException;
 use Cake\Datasource\ConnectionInterface;
 
-abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
+abstract class BaseTriggerBasedTableSniffer
 {
     /**
      * The name of the table collecting dirty tables
@@ -40,6 +41,16 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
      * @var string
      */
     protected $mode;
+
+    /**
+     * @var ConnectionInterface
+     */
+    protected $connection;
+
+    /**
+     * @var array|null
+     */
+    protected $allTables;
 
     /**
      * Get triggers relative to the database dirty table collector
@@ -72,13 +83,27 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     abstract public function createTruncateDirtyTablesProcedure(): void;
 
     /**
+     * Truncate all the dirty tables
+     * @return void
+     */
+    abstract public function truncateDirtyTables(): void;
+
+    /**
+     * Drop tables passed as a parameter
+     * @deprecated table dropping is not handled by this package anymore.
+     * @param array $tables
+     * @return void
+     */
+    abstract public function dropTables(array $tables): void;
+
+    /**
      * BaseTableTruncator constructor.
      * @param ConnectionInterface $connection
      */
     public function __construct(ConnectionInterface $connection)
     {
         $this->mode = $this->getDefaultMode($connection);
-        parent::__construct($connection);
+        $this->setConnection($connection);
     }
 
     /**
@@ -269,5 +294,121 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     public function isInMainMode(): bool
     {
         return ($this->getMode() === self::PERM_MODE);
+    }
+
+    /**
+     * @return ConnectionInterface
+     */
+    public function getConnection(): ConnectionInterface
+    {
+        return $this->connection;
+    }
+
+    /**
+     * @param ConnectionInterface $connection
+     */
+    public function setConnection(ConnectionInterface $connection): void
+    {
+        $this->connection = $connection;
+    }
+
+    /**
+     * Stop spying
+     * @return void
+     */
+    public function shutdown(): void
+    {
+        $this->dropTriggers();
+        $this->dropDirtyTableCollector();
+    }
+
+    /**
+     * Stop spying and restart
+     * Useful if the schema or the
+     * dirty table collector changed
+     * @return void
+     */
+    public function restart(): void
+    {
+        $this->shutdown();
+        $this->init();
+    }
+
+    /**
+     * Execute a query returning a list of table
+     * In case where the query fails because the database queried does
+     * not exist, an exception is thrown.
+     *
+     * @param string $query
+     *
+     * @return array
+     */
+    public function fetchQuery(string $query): array
+    {
+        try {
+            $tables = $this->getConnection()->execute($query)->fetchAll();
+            if ($tables === false) {
+                throw new \Exception("Failing query: $query");
+            }
+        } catch (\Exception $e) {
+            $name = $this->getConnection()->configName();
+            $db = $this->getConnection()->config()['database'];
+            throw new CakeException("Error in the connection '$name'. Is the database '$db' created and accessible?");
+        }
+
+        foreach ($tables as $i => $val) {
+            $tables[$i] = $val[0] ?? $val['name'];
+        }
+
+        return $tables;
+    }
+
+    /**
+     * @param string $glueBefore
+     * @param array  $array
+     * @param string $glueAfter
+     *
+     * @return string
+     */
+    public function implodeSpecial(string $glueBefore, array $array, string $glueAfter): string
+    {
+        return $glueBefore . implode($glueAfter.$glueBefore, $array) . $glueAfter;
+    }
+
+    /**
+     * Get all tables except the phinx tables
+     * * @param bool $forceFetch
+     * @return array
+     */
+    public function getAllTablesExceptPhinxlogs(bool $forceFetch = false): array
+    {
+        $allTables = $this->getAllTables($forceFetch);
+        foreach ($allTables as $i => $table) {
+            if (strpos($table, 'phinxlog') !== false) {
+                unset($allTables[$i]);
+            }
+        }
+        return $allTables;
+    }
+
+    /**
+     * @param bool $forceFetch
+     * @return array
+     */
+    public function getAllTables(bool $forceFetch = false): array
+    {
+        if (is_null($this->allTables) || $forceFetch) {
+            $this->allTables = $this->fetchAllTables();
+        }
+        return $this->allTables;
+    }
+
+    /**
+     * List all tables
+     * @return string[]
+     */
+    public function fetchAllTables(): array
+    {
+        return $this->getConnection()->getSchemaCollection()->listTables();
     }
 }

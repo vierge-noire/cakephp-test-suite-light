@@ -20,7 +20,7 @@ use Cake\ORM\TableRegistry;
 use Cake\TestSuite\ConnectionHelper;
 use Cake\TestSuite\TestCase;
 use CakephpTestSuiteLight\Fixture\TruncateDirtyTables;
-use CakephpTestSuiteLight\Sniffer\BaseTableSniffer;
+use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Test\Traits\InsertTestDataTrait;
 use Migrations\Migrations;
@@ -41,7 +41,7 @@ class TableSnifferDropTablesTest extends TestCase
     ];
 
     /**
-     * @var BaseTableSniffer
+     * @var BaseTriggerBasedTableSniffer
      */
     public $TableSniffer;
 

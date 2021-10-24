@@ -96,17 +96,6 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     /**
      * @inheritDoc
      */
-    public function shutdown(): void
-    {
-        parent::shutdown();
-
-        $this->dropTriggers();
-        $this->dropDirtyTableCollector();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function markAllTablesAsDirty(): void
     {
         $tables = $this->getAllTablesExceptPhinxlogsAndCollector();
