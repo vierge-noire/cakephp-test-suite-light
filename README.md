@@ -78,7 +78,7 @@ with an SQL query by dedicated classes. These are called `TableSniffers` and are
  of the package. These are provided for:
 * Sqlite
 * MySQL
-* Postgres
+* Postgres (Postgresql >= 11 supported. A custom Sniffer is required for lower Postgres versions.)
 
 If you use a different database engine, you may provide your own. It should extend
 the `BaseTableSniffer` class.
