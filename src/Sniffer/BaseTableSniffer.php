@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Sniffer;
 
 
-use Cake\Database\Exception;
+use Cake\Database\Connection;
 use Cake\Datasource\ConnectionInterface;
 
 abstract class BaseTableSniffer
@@ -113,18 +113,21 @@ abstract class BaseTableSniffer
      * @param string $query
      *
      * @return array
+     * @throws \Exception
      */
     public function fetchQuery(string $query): array
     {
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
         try {
-            $tables = $this->getConnection()->execute($query)->fetchAll();
+            $tables = $connection->execute($query)->fetchAll();
             if ($tables === false) {
                 throw new \Exception("Failing query: $query");
             }
         } catch (\Exception $e) {
-            $name = $this->getConnection()->configName();
-            $db = $this->getConnection()->config()['database'];
-            throw new Exception("Error in the connection '$name'. Is the database '$db' created and accessible?");
+            $name = $connection->configName();
+            $db = $connection->config()['database'];
+            throw new \Exception("Error in the connection '$name'. Is the database '$db' created and accessible?");
         }
 
         foreach ($tables as $i => $val) {
@@ -180,6 +183,8 @@ abstract class BaseTableSniffer
      */
     public function fetchAllTables(): array
     {
-        return $this->getConnection()->getSchemaCollection()->listTables();
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        return $connection->getSchemaCollection()->listTables();
     }
 }
