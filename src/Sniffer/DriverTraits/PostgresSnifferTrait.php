@@ -55,7 +55,9 @@ trait PostgresSnifferTrait
 
         foreach ($triggers as $trigger) {
             $table = substr($trigger, strlen(BaseTriggerBasedTableSniffer::TRIGGER_PREFIX));
-            $this->getConnection()->execute("DROP TRIGGER {$trigger} ON \"{$table}\";");
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->execute("DROP TRIGGER {$trigger} ON \"{$table}\";");
         }
     }
 
@@ -68,7 +70,9 @@ trait PostgresSnifferTrait
             return;
         }
 
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->disableConstraints(function (Connection $connection) use ($tables) {
             $tables[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
             foreach ($tables as $table) {
                 $connection->execute(

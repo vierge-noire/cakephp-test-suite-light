@@ -49,7 +49,7 @@ class FixtureInjectorSkipTruncationTest extends TestCase
         unset($this->Countries);
     }
 
-    public function iterator()
+    public static function iterator()
     {
         return [
             [1], [2], [3],

@@ -31,7 +31,7 @@ class CakeFixturesTest extends TestCase
      */
     public $Countries;
 
-    public $fixtures = [
+    public array $fixtures = [
         CountriesFixture::class,
         CitiesFixture::class,
     ];

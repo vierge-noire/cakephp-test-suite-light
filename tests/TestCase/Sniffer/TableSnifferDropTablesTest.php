@@ -34,7 +34,7 @@ class TableSnifferDropTablesTest extends TestCase
     use InsertTestDataTrait;
     use TruncateDirtyTables;
 
-    public $fixtures = [
+    public array $fixtures = [
         // The order here is important
         CountriesFixture::class,
         CitiesFixture::class,

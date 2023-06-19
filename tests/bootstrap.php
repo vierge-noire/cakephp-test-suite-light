@@ -23,6 +23,7 @@ use Cake\Utility\Inflector;
 use Cake\Utility\Security;
 use CakephpTestSuiteLight\Sniffer\BaseTriggerBasedTableSniffer;
 use Migrations\TestSuite\Migrator;
+use function Cake\Core\env;
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);

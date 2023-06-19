@@ -38,7 +38,7 @@ class TriggerStrategyTest extends TestCase
      */
     public $Countries;
 
-    public $fixtures = [
+    public array $fixtures = [
         // The order here is important
         CountriesFixture::class,
         CitiesFixture::class,
