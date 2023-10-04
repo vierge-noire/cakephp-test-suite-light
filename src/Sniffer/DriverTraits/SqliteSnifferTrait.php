@@ -56,7 +56,9 @@ trait SqliteSnifferTrait
         }
 
         foreach ($triggers as $trigger) {
-            $this->getConnection()->execute("DROP TRIGGER {$trigger};");
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->execute("DROP TRIGGER {$trigger};");
         }
     }
 
@@ -69,7 +71,9 @@ trait SqliteSnifferTrait
             return;
         }
 
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->disableConstraints(function (Connection $connection) use ($tables) {
             $tables[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
             $connection->transactional(function(Connection $connection) use ($tables) {
                 foreach ($tables as $table) {

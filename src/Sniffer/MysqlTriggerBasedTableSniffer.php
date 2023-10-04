@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace CakephpTestSuiteLight\Sniffer;
 
 
+use Cake\Database\Connection;
 use CakephpTestSuiteLight\Sniffer\DriverTraits\MysqlSnifferTrait;
 
 class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
@@ -26,7 +27,9 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     public function truncateDirtyTables(): void
     {
         $truncate = function() {
-            $this->getConnection()->execute('CALL TruncateDirtyTables();');
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->execute('CALL TruncateDirtyTables();');
         };
 
         try {
@@ -58,7 +61,9 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
         }
 
         if ($stmts !== '') {
-            $this->getConnection()->execute($stmts);
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->execute($stmts);
         }
     }
 
@@ -78,7 +83,9 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTruncateDirtyTablesProcedure(): void
     {
-        $this->getConnection()->execute("
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute("
             DROP PROCEDURE IF EXISTS TruncateDirtyTables;
             CREATE PROCEDURE TruncateDirtyTables()
             BEGIN
@@ -119,7 +126,9 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     public function markAllTablesAsDirty(): void
     {
         $tables = $this->getAllTablesExceptPhinxlogsAndCollector();
-        $this->getConnection()->execute(
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute(
             "INSERT IGNORE INTO {$this->collectorName()} VALUES ('" . implode("'), ('", $tables) . "')"
         );
     }

@@ -50,7 +50,9 @@ trait MysqlSnifferTrait
         }
 
         $stmts = $this->implodeSpecial("DROP TRIGGER ", $triggers, ";");
-        $this->getConnection()->execute($stmts);
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute($stmts);
     }
 
     /**
@@ -62,7 +64,9 @@ trait MysqlSnifferTrait
             return;
         }
 
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->disableConstraints(function (Connection $connection) use ($tables) {
             $connection->transactional(function(Connection $connection) use ($tables) {
                 $connection->execute(
                     $this->implodeSpecial(

@@ -29,7 +29,7 @@ class CakeFixturesStringNotationTest extends TestCase
      */
     public $Countries;
 
-    public $fixtures = [
+    public array $fixtures = [
         'app.Countries',
         'app.Cities',
     ];

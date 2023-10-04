@@ -34,7 +34,11 @@ class SnifferRegistry
     public static function set(string $connectionName): BaseTableSniffer
     {
         $snifferName = self::getConnectionSnifferName($connectionName);
-        return self::$sniffers[$connectionName] = new $snifferName(self::getConnection($connectionName));
+        $obj = new $snifferName(self::getConnection($connectionName));
+        assert($obj instanceof BaseTableSniffer);
+        self::$sniffers[$connectionName] = $obj;
+
+        return $obj;
     }
 
     /**
