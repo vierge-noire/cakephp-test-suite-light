@@ -27,7 +27,9 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     public function truncateDirtyTables(): void
     {
         $truncate = function() {
-            $this->getConnection()->transactional(function (Connection $connection) {
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->transactional(function (Connection $connection) {
                 $connection->execute('CALL TruncateDirtyTables();');
                 $connection->execute('TRUNCATE TABLE ' . $this->collectorName() . ' RESTART IDENTITY CASCADE;');
             });
@@ -74,7 +76,9 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
                 ";
         }
         foreach ($stmts as $stmt) {
-            $this->getConnection()->execute($stmt);
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->execute($stmt);
         }
     }
 
@@ -94,7 +98,9 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
      */
     public function createTruncateDirtyTablesProcedure(): void
     {
-        $this->getConnection()->execute("
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute("
             CREATE OR REPLACE PROCEDURE TruncateDirtyTables() AS $$
             DECLARE
                 _rec    record;
@@ -119,7 +125,9 @@ class PostgresTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
     public function markAllTablesAsDirty(): void
     {
         $tables = $this->getAllTablesExceptPhinxlogsAndCollector();
-        $this->getConnection()->execute(
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute(
             "INSERT INTO {$this->collectorName()} VALUES ('" . implode("'), ('", $tables) . "') ON CONFLICT DO NOTHING"
         );
     }

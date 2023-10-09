@@ -31,7 +31,7 @@ class SnifferRegistryTest extends TestCase
 {
     use TruncateDirtyTables;
 
-    public function dataProviderTestLoadDefaultSniffer()
+    public static function dataProviderTestLoadDefaultSniffer()
     {
         return [
             [Mysql::class, MysqlTriggerBasedTableSniffer::class],

@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Sniffer;
 
+use Cake\Database\Connection;
 use Cake\Datasource\ConnectionInterface;
 
 abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
@@ -177,7 +178,9 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
         $temporary = $this->isInTempMode() ? 'TEMPORARY' : '';
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
 
-        $this->getConnection()->execute("
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute("
             CREATE {$temporary} TABLE IF NOT EXISTS {$dirtyTable} (
                 table_name VARCHAR(128) PRIMARY KEY
             );
@@ -191,7 +194,9 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
     public function dropDirtyTableCollector()
     {
         $dirtyTable = self::DIRTY_TABLE_COLLECTOR;
-        $this->getConnection()->execute("DROP TABLE IF EXISTS {$dirtyTable}");
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute("DROP TABLE IF EXISTS {$dirtyTable}");
     }
 
     /**
@@ -251,6 +256,7 @@ abstract class BaseTriggerBasedTableSniffer extends BaseTableSniffer
             $msg = self::MODE_KEY . ' can only be equal to ' . self::PERM_MODE . ' or ' . self::TEMP_MODE;
             throw new \Exception($msg);
         }
+        assert(is_string($mode));
 
         return $mode;
     }

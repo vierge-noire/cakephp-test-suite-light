@@ -43,7 +43,9 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
             return;
         }
 
-        $this->getConnection()->disableConstraints(function (Connection $connection) use ($tables) {
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->disableConstraints(function (Connection $connection) use ($tables) {
             foreach ($tables as $table) {
                 $connection->delete($table);
                 try {
@@ -81,7 +83,9 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
             ";
         }
         foreach ($stmts as $stmt) {
-            $this->getConnection()->execute($stmt);
+            /** @var Connection $connection */
+            $connection = $this->getConnection();
+            $connection->execute($stmt);
         }
     }
 
@@ -112,6 +116,8 @@ class SqliteTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
         $tables = $this->getAllTablesExceptPhinxlogsAndCollector();
 
         $stmt = "INSERT OR IGNORE INTO {$this->collectorName()} VALUES ('" . implode("'), ('", $tables) . "')";
-        $this->getConnection()->execute($stmt);
+        /** @var Connection $connection */
+        $connection = $this->getConnection();
+        $connection->execute($stmt);
     }
 }

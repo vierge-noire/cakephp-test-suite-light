@@ -1,0 +1,36 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Cannot access offset 'skipInTestSuiteLight' on mixed\\.$#"
+			count: 1
+			path: src/Fixture/TriggerStrategy.php
+
+		-
+			message: "#^Parameter \\#2 \\$haystack of function in_array expects array, mixed given\\.$#"
+			count: 1
+			path: src/Fixture/TriggerStrategy.php
+
+		-
+			message: "#^Part \\$db \\(mixed\\) of encapsed string cannot be cast to string\\.$#"
+			count: 1
+			path: src/Sniffer/BaseTableSniffer.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between array and false will always evaluate to false\\.$#"
+			count: 1
+			path: src/Sniffer/BaseTableSniffer.php
+
+		-
+			message: "#^Cannot access offset 'tableSniffer' on mixed\\.$#"
+			count: 2
+			path: src/Sniffer/SnifferRegistry.php
+
+		-
+			message: "#^Part \\$driver \\(mixed\\) of encapsed string cannot be cast to string\\.$#"
+			count: 1
+			path: src/Sniffer/SnifferRegistry.php
+
+		-
+			message: "#^Cannot access offset 'driver' on mixed\\.$#"
+			count: 1
+			path: tests/TestApp/config/Migrations/20200208100000_initial_migration.php
