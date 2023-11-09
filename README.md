@@ -1,11 +1,14 @@
 # cakephp-test-suite-light
 A fast test suite for CakePHP applications
 
-#### For CakePHP 3.x
-composer require --dev vierge-noire/cakephp-test-suite-light "^1.0"
+#### For CakePHP 5.x
+composer require --dev vierge-noire/cakephp-test-suite-light "^3.0"
 
 #### For CakePHP 4.x
 composer require --dev vierge-noire/cakephp-test-suite-light "^2.0"
+
+#### For CakePHP 3.x
+composer require --dev vierge-noire/cakephp-test-suite-light "^1.0"
 
 ## Installation
 
