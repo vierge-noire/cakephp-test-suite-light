@@ -20,20 +20,20 @@
     "ext-pdo": "*"
   },
   "require-dev": {
-    "cakephp/migrations": "4.x-dev",
+    "cakephp/migrations": "^4.1.0",
     "josegonzalez/dotenv": "^4.0.0",
     "phpunit/phpunit": "^10.1"
   },
   "autoload": {
     "psr-4": {
-      "CakephpTestSuiteLight\\": "src"
+      "CakephpTestSuiteLight\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "CakephpTestSuiteLight\\Test\\": "tests",
-      "TestApp\\": "tests/TestApp/src",
-      "TestApp\\Test\\": "tests/TestApp/tests"
+      "CakephpTestSuiteLight\\Test\\": "tests/",
+      "TestApp\\": "tests/TestApp/src/",
+      "TestApp\\Test\\": "tests/TestApp/tests/"
     }
   },
   "scripts": {
