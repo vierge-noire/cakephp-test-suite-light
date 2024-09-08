@@ -54,7 +54,7 @@ class MysqlTriggerBasedTableSniffer extends BaseTriggerBasedTableSniffer
         $stmts = "";
         foreach ($this->getAllTablesExceptPhinxlogsAndCollector(true) as $table) {
             $stmts .= "       
-            CREATE TRIGGER {$this->getTriggerName($table)} AFTER INSERT ON `{$table}`
+            CREATE TRIGGER `{$this->getTriggerName($table)}` AFTER INSERT ON `{$table}`
             FOR EACH ROW                
                 INSERT IGNORE INTO {$this->collectorName()} VALUES ('{$table}');                
             ";
