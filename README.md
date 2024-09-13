@@ -50,6 +50,7 @@ The package will empty by default the dirty tables in all test databases.
 If you with to ignore the truncation for a given test case, you may use the
 `CakephpTestSuiteLight\SkipTablesTruncation` trait
 
+#### Ignoring specific connections
 If you wish to ignore a given connection, you may 
 provide the `skipInTestSuiteLight` key to `true` in your `config/app.php`. E.g.:  
 
@@ -67,6 +68,11 @@ In config/app.php
 ```
 
 This can be useful for example if you have connections to a third party server in the cloud that should be ignored.
+
+#### Troubleshooting
+
+##### Error on MySQL ^8: `PROCEDURE my_user.TruncateDirtyTables does not exist`
+MySQL 8 and up has special restrictions on which users can create functions. Check that the DB user that the test suite is running under has the `SUPER` privilege. If not, the privilege must be added to the user or the server must be configured with the system variable `log_bin_trust_function_creators` set to 1. [More information on log_bin_trust_function_creators](https://dev.mysql.com/doc/refman/8.4/en/stored-programs-logging.html).
 
 ## Test life cycle
 
