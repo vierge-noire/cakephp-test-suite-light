@@ -140,6 +140,21 @@ Note that the statistic tool does not perform any query in the database. It uses
 that is being gathered regardless of its actvation. It has no significant impact on the
 overall speed of your tests. 
 
+## Troubleshooting
+
+### MySQL error: Syntax error or access violation: 1305 PROCEDURE my_user.TruncateDirtyTables does not exist
+This issue arises because, in MySQL 8.0+, stored procedures like `TruncateDirtyTables` are not automatically created 
+due to changes in MySQL's behavior. To fix this issue, ensure you have this line in your MySQL server configuration:
+
+```
+log_bin_trust_function_creators = 1
+```
+
+This variable in MySQL determines whether the server requires additional safety checks when creating or altering stored
+functions and triggers, particularly in environments where binary logging is enabled.
+
+For more information, see: #68 and the [official MySQL documentation](https://dev.mysql.com/doc/refman/8.4/en/stored-programs-logging.html).
+
 ## Authors
 * Juan Pablo Ramirez
 * Nicolas Masson
