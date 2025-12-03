@@ -13,7 +13,6 @@ declare(strict_types=1);
  */
 namespace CakephpTestSuiteLight\Test\TestCase\Sniffer;
 
-
 use Cake\Database\Driver\Mysql;
 use Cake\Database\Driver\Postgres;
 use Cake\Database\Driver\Sqlite;
@@ -79,5 +78,12 @@ class SnifferRegistryTest extends TestCase
             $expected = true;
         }
         $this->assertSame($expected, $collectorIsVisible);
+    }
+
+    public function testFetchAllTablesIgnoreViews(): void
+    {
+        $tables = SnifferRegistry::get('test')->fetchAllTables();
+
+        $this->assertFalse(in_array('view_cities', $tables));
     }
 }

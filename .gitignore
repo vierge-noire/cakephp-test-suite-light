@@ -6,3 +6,5 @@ composer.lock
 /.phpunit.cache
 /tmp/
 tests/.env
+/composer.phar
+/docker-compose.yaml

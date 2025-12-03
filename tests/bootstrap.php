@@ -199,3 +199,15 @@ Inflector::rules('singular', ['/(ss)$/i' => '\1']);
 
 // Run migrations
 (new Migrator(['outputLevel' => ConsoleIo::VERBOSE]))->run();
+
+// Create view manually. Phinx doesn't handle it.
+if (in_array($driver, ['Mysql', 'Posgres'])) {
+    $query = <<<SQL
+CREATE VIEW IF NOT EXISTS view_cities (country_name, city_name) AS
+    SELECT Countries.name, Cities.name
+    FROM countries Countries
+        JOIN cities Cities ON Cities.country_id=Countries.id
+SQL;
+    $conn = ConnectionManager::get('test')->getDriver();
+    $conn->exec($query);
+}

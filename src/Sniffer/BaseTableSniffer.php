@@ -185,6 +185,6 @@ abstract class BaseTableSniffer
     {
         /** @var Connection $connection */
         $connection = $this->getConnection();
-        return $connection->getSchemaCollection()->listTables();
+        return $connection->getSchemaCollection()->listTablesWithoutViews();
     }
 }
