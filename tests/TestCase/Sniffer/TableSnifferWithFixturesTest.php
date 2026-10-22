@@ -101,7 +101,7 @@ class TableSnifferWithFixturesTest extends TestCase
     public function testGetAllTables()
     {
         $found = $this->TableSniffer->fetchAllTables();
-        $expected = array_merge($this->getAllTables(), ['phinxlog']);
+        $expected = array_merge($this->getAllTables(), ['cake_migrations']);
         if ($this->TableSniffer->isInMainMode()) {
             $expected[] = BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR;
         }

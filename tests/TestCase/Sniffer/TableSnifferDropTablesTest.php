@@ -67,6 +67,8 @@ class TableSnifferDropTablesTest extends TestCase
     {
         (new Migrations())->migrate(['connection' => 'test']);
 
+        SnifferRegistry::get('test')->restart();
+
         unset($this->TableSniffer);
         unset($this->Countries);
         unset($this->Cities);

@@ -25,6 +25,7 @@ use CakephpTestSuiteLight\Sniffer\MysqlTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\PostgresTriggerBasedTableSniffer;
 use CakephpTestSuiteLight\Sniffer\SnifferRegistry;
 use CakephpTestSuiteLight\Sniffer\SqliteTriggerBasedTableSniffer;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Exception;
 
 class SnifferRegistryTest extends TestCase
@@ -40,11 +41,7 @@ class SnifferRegistryTest extends TestCase
         ];
     }
 
-    /**
-     * @param $driver
-     * @param $sniffer
-     * @dataProvider dataProviderTestLoadDefaultSniffer
-     */
+    #[DataProvider('dataProviderTestLoadDefaultSniffer')]
     public function testGetDefaultTableSniffers($driver, $sniffer)
     {
         $act = SnifferRegistry::getDefaultTableSniffers()[$driver];

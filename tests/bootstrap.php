@@ -99,6 +99,8 @@ Cache::setConfig([
     ],
 ]);
 
+Cache::clear('_cake_model_');
+
 $loadEnv = function(string $fileName) {
     if (file_exists($fileName)) {
         $dotenv = new \josegonzalez\Dotenv\Loader($fileName);

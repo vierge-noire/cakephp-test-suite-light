@@ -15,6 +15,7 @@ namespace CakephpTestSuiteLight\Test\TestCase;
 
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TestApp\Model\Table\CountriesTable;
 
 class FixtureInjectorSkipTruncationTest extends TestCase
@@ -57,9 +58,9 @@ class FixtureInjectorSkipTruncationTest extends TestCase
     }
 
     /**
-     * @dataProvider iterator
      * @param int $expected
      */
+    #[DataProvider('iterator')]
     public function testTruncationSkipped(int $expected)
     {
         $country = $this->Countries->newEntity(['name' => 'foo']);

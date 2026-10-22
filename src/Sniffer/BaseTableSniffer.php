@@ -158,7 +158,7 @@ abstract class BaseTableSniffer
     {
         $allTables = $this->getAllTables($forceFetch);
         foreach ($allTables as $i => $table) {
-            if (strpos($table, 'phinxlog') !== false) {
+            if (strpos($table, 'phinxlog') !== false || strpos($table, 'cake_migrations') !== false) {
                 unset($allTables[$i]);
             }
         }

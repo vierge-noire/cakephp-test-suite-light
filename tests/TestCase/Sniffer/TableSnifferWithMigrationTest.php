@@ -56,7 +56,7 @@ class TableSnifferWithMigrationTest extends TestCase
     {
         // Drop the product entry
         ConnectionManager::get('test')
-            ->newQuery()
+            ->deleteQuery()
             ->delete(BaseTriggerBasedTableSniffer::DIRTY_TABLE_COLLECTOR)
             ->where(['table_name' => 'products'])
             ->execute();
